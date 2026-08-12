@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Focus Photos{% endblock %}</title>
+    
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: #0f1217;
+            color: #ffffff;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .login-container-wrapper {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-grow: 1;
+            padding: 40px 20px;
+        }
+
+        .login-box {
+            position: relative;
+            width: 420px;
+            padding: 35px 28px;
+            background: #181c24;
+            border-radius: 16px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
+            transition: transform 0.4s ease, box-shadow 0.4s ease;
+            overflow: hidden;
+        }
+
+        .login-box:hover {
+            transform: scale(1.02);
+            box-shadow: 0 20px 45px rgba(0, 0, 0, 0.7);
+        }
+
+        .login-box::before {
+            content: "";
+            position: absolute;
+            inset: 50%;
+            width: 170cqmax;
+            height: 170cqmax;
+            translate: -50% -50%;
+            background: conic-gradient(
+                from 0deg,
+                transparent 0deg 36deg,
+                #35eaff 36deg 48deg,
+                transparent 48deg 126deg,
+                #ff0a6c 126deg 138deg,
+                transparent 138deg 216deg,
+                #35eaff 216deg 228deg,
+                transparent 228deg 306deg,
+                #ff0a6c 306deg 318deg,
+                transparent 318deg 360deg
+            );
+            filter: blur(1px) drop-shadow(0 0 12px #35eaff);
+            animation: neon-rotate 5s linear infinite;
+            z-index: 1;
+        }
+
+        @keyframes neon-rotate {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .login-box::after {
+            content: "";
+            position: absolute;
+            inset: 3px;
+            background: #181c24;
+            border-radius: 14px;
+            z-index: 2;
+        }
+
+        .login-content {
+            position: relative;
+            z-index: 3;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .login-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #ffffff;
+            font-size: 1.3rem;
+            font-weight: 700;
+            letter-spacing: 2px;
+            margin-bottom: 25px;
+            text-transform: uppercase;
+        }
+
+        .login-header i.pink-icon { color: #ff0a6c; font-size: 1.1rem; }
+        .login-header i.cyan-icon { color: #35eaff; font-size: 1.1rem; }
+
+        .input-group-item {
+            width: 100%;
+            margin-bottom: 15px;
+        }
+
+        .input-group-item input {
+            width: 100%;
+            padding: 14px 20px;
+            background: #212631;
+            border: 1px solid #2d3444;
+            outline: none;
+            border-radius: 25px;
+            color: #ffffff;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+        }
+
+        .input-group-item input::placeholder { color: #727b8e; }
+        .input-group-item input:focus {
+            border-color: #35eaff;
+            box-shadow: 0 0 10px rgba(53, 234, 255, 0.3);
+        }
+
+        .btn-submit {
+            width: 100%;
+            padding: 14px;
+            background: #35eaff;
+            border: none;
+            outline: none;
+            border-radius: 25px;
+            color: #0d1117;
+            font-weight: 700;
+            font-size: 1rem;
+            cursor: pointer;
+            margin-top: 5px;
+            margin-bottom: 20px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(53, 234, 255, 0.4);
+        }
+
+        .btn-submit:hover {
+            background: #2cd0e3;
+            box-shadow: 0 6px 20px rgba(53, 234, 255, 0.6);
+            transform: translateY(-2px);
+        }
+
+        .login-footer {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            padding: 0 10px;
+            font-size: 0.85rem;
+        }
+
+        .login-footer a { text-decoration: none; transition: color 0.3s ease; }
+        .login-footer .forgot { color: #a0a8b9; }
+        .login-footer .forgot:hover { color: #ffffff; }
+        .login-footer .signup { color: #ff0a6c; font-weight: 600; }
+        .login-footer .signup:hover { color: #ff408b; }
+
+        .alert-message {
+            background: rgba(255, 10, 108, 0.2);
+            border: 1px solid #ff0a6c;
+            color: #ffffff;
+            padding: 10px 15px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            margin-bottom: 15px;
+            width: 100%;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+    {% block content %}
+    {% endblock %}
+
+</body>
+</html>

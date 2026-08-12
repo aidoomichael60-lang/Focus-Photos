@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+
+{% block title %}Register - Focus Photos{% endblock %}
+
+{% block content %}
+<div class="login-container-wrapper">
+    <div class="login-box">
+        <div class="login-content">
+            <div class="login-header">
+                <i class="fa-solid fa-user-plus pink-icon"></i>
+                <span>REGISTER</span>
+                <i class="fa-solid fa-lock cyan-icon"></i>
+            </div>
+
+            {% with messages = get_flashed_messages() %}
+              {% if messages %}
+                {% for message in messages %}
+                  <div class="alert-message">{{ message }}</div>
+                {% endfor %}
+              {% endif %}
+            {% endwith %}
+
+            <form method="POST" action="{{ url_for('register') }}" onsubmit="return validatePasswords()" style="width: 100%;">
+                <div class="input-group-item">
+                    <input type="text" name="username" placeholder="Username" required>
+                </div>
+
+                <div class="input-group-item">
+                    <input type="email" name="email" placeholder="Gmail Address (e.g. name@gmail.com)" required>
+                </div>
+
+                <div class="input-group-item">
+                    <input type="tel" name="phone" placeholder="Phone Number (e.g. 050XXXXXXX)" required>
+                </div>
+                
+                <div class="input-group-item" style="position: relative; margin-bottom: 12px;">
+                    <input type="password" id="password" name="password" 
+                           placeholder="Password (Min 8 chars, Upper, Symbol)" 
+                           pattern="(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[\W_]).{8,}" 
+                           title="Must contain at least 8 characters, including upper & lower case letters, a number, and a symbol." 
+                           style="padding-right: 45px;" required>
+                    <i class="fa-solid fa-eye" id="togglePwd" onclick="toggleVisibility('password', 'togglePwd')" 
+                       style="position: absolute; right: 15px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #727b8e;"></i>
+                </div>
+
+                <div class="input-group-item" style="position: relative; margin-bottom: 8px;">
+                    <input type="password" id="confirm_password" name="confirm_password" 
+                           placeholder="Confirm Password" 
+                           style="padding-right: 45px;" required>
+                    <i class="fa-solid fa-eye" id="toggleConfirmPwd" onclick="toggleVisibility('confirm_password', 'toggleConfirmPwd')" 
+                       style="position: absolute; right: 15px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #727b8e;"></i>
+                </div>
+
+                <div id="pwdError" style="color: #ff0a6c; font-size: 0.8rem; display: none; margin-bottom: 10px; text-align: center;">
+                    Passwords do not match!
+                </div>
+
+                <div style="width: 100%; text-align: right; margin-bottom: 15px;">
+                    <button type="button" onclick="generateStrongPassword()" style="background: none; border: none; color: #35eaff; font-size: 0.82rem; cursor: pointer; text-decoration: underline; padding: 0;">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i> Suggest Strong Password
+                    </button>
+                </div>
+
+                <p style="font-size: 0.78rem; color: #a0a8b9; text-align: center; margin-bottom: 15px;">
+                    <i class="fa-solid fa-shield-halved" style="color: #35eaff;"></i> An OTP code will be generated for email/phone verification.
+                </p>
+                
+                <button type="submit" class="btn-submit">Continue to Verification</button>
+            </form>
+
+            <div class="login-footer" style="justify-content: center; gap: 8px;">
+                <span style="color: #a0a8b9;">Already have an account?</span>
+                <a href="{{ url_for('login') }}" class="signup">Sign in</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function toggleVisibility(inputId, iconId) {
+    const field = document.getElementById(inputId);
+    const icon = document.getElementById(iconId);
+    
+    if (field.type === "password") {
+        field.type = "text";
+        icon.classList.remove("fa-eye");
+        icon.classList.add("fa-eye-slash");
+        icon.style.color = "#35eaff";
+    } else {
+        field.type = "password";
+        icon.classList.remove("fa-eye-slash");
+        icon.classList.add("fa-eye");
+        icon.style.color = "#727b8e";
+    }
+}
+
+function generateStrongPassword() {
+    const uppers = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    const lowers = "abcdefghijklmnopqrstuvwxyz";
+    const numbers = "0123456789";
+    const symbols = "!@#$%^&*()_+-=";
+    const all = uppers + lowers + numbers + symbols;
+
+    let password = "";
+    password += uppers[Math.floor(Math.random() * uppers.length)];
+    password += lowers[Math.floor(Math.random() * lowers.length)];
+    password += numbers[Math.floor(Math.random() * numbers.length)];
+    password += symbols[Math.floor(Math.random() * symbols.length)];
+
+    for (let i = 0; i < 10; i++) {
+        password += all[Math.floor(Math.random() * all.length)];
+    }
+
+    password = password.split('').sort(() => 0.5 - Math.random()).join('');
+
+    const pwdField = document.getElementById("password");
+    const confirmField = document.getElementById("confirm_password");
+    
+    pwdField.value = password;
+    confirmField.value = password;
+
+    pwdField.type = "text";
+    confirmField.type = "text";
+    
+    document.getElementById("togglePwd").classList.replace("fa-eye", "fa-eye-slash");
+    document.getElementById("togglePwd").style.color = "#35eaff";
+    document.getElementById("toggleConfirmPwd").classList.replace("fa-eye", "fa-eye-slash");
+    document.getElementById("toggleConfirmPwd").style.color = "#35eaff";
+
+    document.getElementById("pwdError").style.display = "none";
+}
+
+function validatePasswords() {
+    const pwd = document.getElementById("password").value;
+    const confirmPwd = document.getElementById("confirm_password").value;
+    const errorDiv = document.getElementById("pwdError");
+
+    if (pwd !== confirmPwd) {
+        errorDiv.style.display = "block";
+        return false;
+    }
+    errorDiv.style.display = "none";
+    return true;
+}
+</script>
+{% endblock %}

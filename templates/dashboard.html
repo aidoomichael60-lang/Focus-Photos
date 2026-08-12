@@ -1,0 +1,522 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Focus Photos{% endblock %}
+
+{% block content %}
+<style>
+    :root {
+        --bg-main: #ffffff;
+        --bg-sidebar: #f8fafc;
+        --bg-card: #ffffff;
+        --border-color: #e2e8f0;
+        --text-primary: #0f172a;
+        --text-secondary: #64748b;
+        --accent-blue: #2563eb;
+        --accent-hover: #1d4ed8;
+    }
+
+    [data-theme="dark"] {
+        --bg-main: #000000;
+        --bg-sidebar: #111111;
+        --bg-card: #18181b;
+        --border-color: #27272a;
+        --text-primary: #ffffff;
+        --text-secondary: #a1a1aa;
+        --accent-blue: #3b82f6;
+        --accent-hover: #2563eb;
+    }
+
+    .app-layout {
+        display: flex;
+        min-height: calc(100vh - 60px);
+        background-color: var(--bg-main);
+        color: var(--text-primary);
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+
+    .sidebar {
+        width: 260px;
+        background: var(--bg-sidebar);
+        border-right: 1px solid var(--border-color);
+        padding: 20px 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .sidebar-section-title {
+        font-size: 0.75rem;
+        font-weight: 700;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+        margin: 18px 0 6px 12px;
+    }
+
+    .nav-item {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 10px 16px;
+        border-radius: 20px;
+        color: var(--text-primary);
+        font-size: 0.95rem;
+        cursor: pointer;
+    }
+
+    .nav-item:hover { background-color: var(--border-color); }
+    .nav-item.active { background-color: var(--accent-blue); color: #ffffff; font-weight: 600; }
+
+    .main-content {
+        flex-grow: 1;
+        padding: 30px 40px;
+        max-width: 1200px;
+    }
+
+    .dashboard-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+    }
+
+    .btn-action {
+        padding: 10px 18px;
+        border-radius: 20px;
+        font-weight: 600;
+        border: none;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .btn-primary { background: var(--accent-blue); color: #ffffff; }
+    .btn-secondary { background: var(--border-color); color: var(--text-primary); }
+
+    .back-bar {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 20px;
+        cursor: pointer;
+        color: var(--accent-blue);
+        font-weight: 600;
+    }
+
+    .storage-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 14px;
+        padding: 18px 24px;
+        margin-bottom: 30px;
+    }
+
+    .progress-bar-bg {
+        width: 100%;
+        height: 8px;
+        background: var(--border-color);
+        border-radius: 10px;
+        overflow: hidden;
+    }
+
+    .progress-bar-fill {
+        width: 0%;
+        height: 100%;
+        background: var(--accent-blue);
+    }
+
+    .tab-view { display: none; }
+    .tab-view.active { display: block; }
+
+    .media-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+        gap: 16px;
+    }
+
+    .media-card {
+        position: relative;
+        aspect-ratio: 1;
+        border-radius: 12px;
+        overflow: hidden;
+        border: 1px solid var(--border-color);
+    }
+
+    .media-card img { width: 100%; height: 100%; object-fit: cover; }
+
+    .empty-state {
+        background: var(--bg-card);
+        border: 1px dashed var(--border-color);
+        border-radius: 16px;
+        padding: 60px 20px;
+        text-align: center;
+        color: var(--text-secondary);
+    }
+
+    /* Camera Overlay View */
+    .camera-modal {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.95);
+        z-index: 999;
+        display: none;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .camera-modal-content {
+        position: relative;
+        width: 100%;
+        max-width: 440px;
+        height: 820px;
+        background: #000;
+        border-radius: 28px;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        border: 2px solid #222;
+    }
+
+    .camera-top-bar {
+        padding: 14px 16px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: #000;
+        z-index: 10;
+    }
+
+    .cam-btn {
+        background: transparent;
+        color: #ffffff;
+        border: 1px solid #333;
+        border-radius: 20px;
+        padding: 6px 12px;
+        font-size: 0.85rem;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .cam-btn.active {
+        background: #facc15;
+        color: #000000;
+        border-color: #facc15;
+        font-weight: 700;
+    }
+
+    .camera-viewport {
+        position: relative;
+        width: 100%;
+        flex-grow: 1;
+        background: #111;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+    }
+
+    video#cameraFeed {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .exposure-slider-container {
+        position: absolute;
+        bottom: 12px;
+        left: 20px;
+        right: 20px;
+        background: rgba(0,0,0,0.75);
+        padding: 8px 16px;
+        border-radius: 20px;
+        display: none;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .exposure-slider-container input {
+        flex-grow: 1;
+        accent-color: #facc15;
+    }
+
+    .camera-bottom-panel {
+        background: #000000;
+        padding: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .shutter-btn {
+        width: 68px;
+        height: 68px;
+        border-radius: 50%;
+        border: 4px solid #ffffff;
+        background: transparent;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+    }
+
+    .shutter-inner {
+        width: 52px;
+        height: 52px;
+        border-radius: 50%;
+        background: #ffffff;
+    }
+</style>
+
+{% set active_username = username or (current_user.username if current_user is defined and current_user.username else session.get('username', session.get('user', 'User'))) %}
+
+<div class="app-layout" id="appLayout">
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="nav-item active" id="navPhotos" onclick="showTab('photosTab', this)">
+            <i class="fa-regular fa-image"></i>
+            <span>Photos</span>
+        </div>
+        <div class="nav-item" id="navUpdates" onclick="showTab('updatesTab', this)">
+            <i class="fa-regular fa-bell"></i>
+            <span>Updates</span>
+        </div>
+        <div class="sidebar-section-title">Collections</div>
+        <div class="nav-item" id="navAlbums" onclick="showTab('albumsTab', this)">
+            <i class="fa-regular fa-folder"></i>
+            <span>Albums</span>
+        </div>
+        <div class="nav-item" id="navDocuments" onclick="showTab('documentsTab', this)">
+            <i class="fa-regular fa-file-lines"></i>
+            <span>Documents</span>
+        </div>
+        <div class="nav-item" id="navScreenshots" onclick="showTab('screenshotsTab', this)">
+            <i class="fa-solid fa-mobile-screen"></i>
+            <span>Screenshots</span>
+        </div>
+        <div class="nav-item" id="navFavorites" onclick="showTab('favoritesTab', this)">
+            <i class="fa-regular fa-star"></i>
+            <span>Favorites</span>
+        </div>
+        <div class="sidebar-section-title">Account</div>
+        <div class="nav-item" id="navProfile" onclick="showTab('profileTab', this)">
+            <i class="fa-regular fa-user"></i>
+            <span>User Profile</span>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="dashboard-header">
+            <h1 id="welcomeHeading">Welcome, {{ active_username }} 👋</h1>
+            <div>
+                <input type="file" id="fileUploadInput" accept="image/*" style="display: none;" onchange="handleFileUpload(event)">
+                <button type="button" class="btn-action btn-secondary" onclick="document.getElementById('fileUploadInput').click()">Upload</button>
+                <button type="button" class="btn-action btn-primary" onclick="openCameraModal()">Camera</button>
+            </div>
+        </div>
+
+        <div class="storage-card">
+            <div>Storage Used: <strong id="usedStorageText">0.00 MB</strong> / 20 GB</div>
+            <div class="progress-bar-bg" style="margin-top:8px;">
+                <div class="progress-bar-fill" id="storageProgressBar"></div>
+            </div>
+        </div>
+
+        <div id="photosTab" class="tab-view active">
+            <div id="photosGrid" class="media-grid"></div>
+            <div id="photosEmpty" class="empty-state">
+                <h3>No photos saved yet</h3>
+                <p>Use "Camera" or "Upload" to get started.</p>
+            </div>
+        </div>
+
+        <div id="profileTab" class="tab-view">
+            <div class="back-bar" onclick="returnToDashboardHome()"><i class="fa-solid fa-arrow-left"></i> Back to Dashboard</div>
+            <div class="empty-state">
+                <h2>User Profile</h2>
+                <p><strong>Username:</strong> {{ active_username }}</p>
+                <p><strong>Account Status:</strong> Active</p>
+            </div>
+        </div>
+
+        <div id="updatesTab" class="tab-view">
+            <div class="back-bar" onclick="returnToDashboardHome()"><i class="fa-solid fa-arrow-left"></i> Back to Dashboard</div>
+            <div class="empty-state"><h3>No updates</h3></div>
+        </div>
+        <div id="albumsTab" class="tab-view">
+            <div class="back-bar" onclick="returnToDashboardHome()"><i class="fa-solid fa-arrow-left"></i> Back to Dashboard</div>
+            <div class="empty-state"><h3>No albums</h3></div>
+        </div>
+        <div id="documentsTab" class="tab-view">
+            <div class="back-bar" onclick="returnToDashboardHome()"><i class="fa-solid fa-arrow-left"></i> Back to Dashboard</div>
+            <div class="empty-state"><h3>No documents</h3></div>
+        </div>
+        <div id="screenshotsTab" class="tab-view">
+            <div class="back-bar" onclick="returnToDashboardHome()"><i class="fa-solid fa-arrow-left"></i> Back to Dashboard</div>
+            <div class="empty-state"><h3>No screenshots</h3></div>
+        </div>
+        <div id="favoritesTab" class="tab-view">
+            <div class="back-bar" onclick="returnToDashboardHome()"><i class="fa-solid fa-arrow-left"></i> Back to Dashboard</div>
+            <div class="empty-state"><h3>No favorites</h3></div>
+        </div>
+    </div>
+</div>
+
+<!-- Dedicated Camera Screen Overlay -->
+<div class="camera-modal" id="cameraModal">
+    <div class="camera-modal-content">
+        <!-- Top Toolbar with Features and Guaranteed Back Button -->
+        <div class="camera-top-bar">
+            <button type="button" class="cam-btn" style="font-weight: bold; background: #333;" onclick="closeCameraModal()">
+                <i class="fa-solid fa-chevron-left"></i> Back
+            </button>
+            <button type="button" class="cam-btn" id="btnFlash" onclick="toggleFlash()"><i class="fa-solid fa-bolt"></i> Flash</button>
+            <button type="button" class="cam-btn" id="btnTimer" onclick="toggleTimer()"><i class="fa-solid fa-stopwatch"></i> <span id="timerLabel">Off</span></button>
+            <button type="button" class="cam-btn" id="btnNight" onclick="toggleNightMode()"><i class="fa-solid fa-moon"></i> Night</button>
+            <button type="button" class="cam-btn" onclick="toggleExposure()"><i class="fa-solid fa-sun"></i> EV</button>
+        </div>
+
+        <!-- Viewfinder Canvas -->
+        <div class="camera-viewport">
+            <video id="cameraFeed" autoplay playsinline muted></video>
+            <div class="exposure-slider-container" id="exposureContainer">
+                <i class="fa-solid fa-sun" style="color:#facc15;"></i>
+                <input type="range" id="expRange" min="50" max="150" value="100" oninput="setExposure(this.value)">
+            </div>
+        </div>
+
+        <!-- Bottom Shutter & Controls -->
+        <div class="camera-bottom-panel">
+            <div style="width: 44px;"></div>
+            <div class="shutter-btn" onclick="takePicture()"><div class="shutter-inner"></div></div>
+            <button type="button" class="cam-btn" onclick="flipCamera()"><i class="fa-solid fa-arrows-rotate"></i> Flip</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let mediaState = [];
+    let currentStream = null;
+    let facingMode = 'user';
+    let flashOn = false;
+    let timerVal = 0;
+    let nightModeVal = false;
+
+    // View Navigation
+    function showTab(tabId, el) {
+        document.querySelectorAll('.tab-view').forEach(v => v.classList.remove('active'));
+        document.querySelectorAll('.sidebar .nav-item').forEach(i => i.classList.remove('active'));
+        document.getElementById(tabId).classList.add('active');
+        if (el) el.classList.add('active');
+    }
+
+    function returnToDashboardHome() {
+        showTab('photosTab', document.getElementById('navPhotos'));
+    }
+
+    // Explicit Close Camera Function
+    function closeCameraModal() {
+        const modal = document.getElementById('cameraModal');
+        modal.style.display = 'none';
+        if (currentStream) {
+            currentStream.getTracks().forEach(track => track.stop());
+            currentStream = null;
+        }
+    }
+
+    async function openCameraModal() {
+        document.getElementById('cameraModal').style.display = 'flex';
+        try {
+            if (currentStream) currentStream.getTracks().forEach(t => t.stop());
+            currentStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: facingMode } });
+            document.getElementById('cameraFeed').srcObject = currentStream;
+        } catch (err) {
+            alert("Could not access camera device.");
+        }
+    }
+
+    // Camera Features
+    function toggleFlash() {
+        flashOn = !flashOn;
+        document.getElementById('btnFlash').classList.toggle('active', flashOn);
+    }
+
+    function toggleTimer() {
+        timerVal = timerVal === 0 ? 3 : (timerVal === 3 ? 10 : 0);
+        document.getElementById('timerLabel').innerText = timerVal === 0 ? 'Off' : `${timerVal}s`;
+        document.getElementById('btnTimer').classList.toggle('active', timerVal > 0);
+    }
+
+    function toggleNightMode() {
+        nightModeVal = !nightModeVal;
+        document.getElementById('btnNight').classList.toggle('active', nightModeVal);
+        document.getElementById('cameraFeed').style.filter = nightModeVal ? 'brightness(170%) contrast(120%)' : 'none';
+    }
+
+    function toggleExposure() {
+        const box = document.getElementById('exposureContainer');
+        box.style.display = box.style.display === 'flex' ? 'none' : 'flex';
+    }
+
+    function setExposure(val) {
+        document.getElementById('cameraFeed').style.filter = `brightness(${val}%)`;
+    }
+
+    function flipCamera() {
+        facingMode = facingMode === 'user' ? 'environment' : 'user';
+        openCameraModal();
+    }
+
+    function takePicture() {
+        if (timerVal > 0) {
+            setTimeout(captureNow, timerVal * 1000);
+        } else {
+            captureNow();
+        }
+    }
+
+    function captureNow() {
+        const video = document.getElementById('cameraFeed');
+        const canvas = document.createElement('canvas');
+        canvas.width = video.videoWidth || 640;
+        canvas.height = video.videoHeight || 480;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(video, 0, 0);
+
+        mediaState.push({
+            id: Date.now(),
+            src: canvas.toDataURL('image/png')
+        });
+
+        closeCameraModal();
+        renderPhotos();
+    }
+
+    function handleFileUpload(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(evt) {
+            mediaState.push({ id: Date.now(), src: evt.target.result });
+            renderPhotos();
+        };
+        reader.readAsDataURL(file);
+    }
+
+    function renderPhotos() {
+        const container = document.getElementById('photosGrid');
+        const empty = document.getElementById('photosEmpty');
+        if (!mediaState.length) {
+            container.innerHTML = '';
+            empty.style.display = 'block';
+            return;
+        }
+        empty.style.display = 'none';
+        container.innerHTML = mediaState.map(m => `
+            <div class="media-card"><img src="${m.src}"></div>
+        `).join('');
+    }
+</script>
+{% endblock %}

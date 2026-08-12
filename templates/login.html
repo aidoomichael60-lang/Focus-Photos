@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+
+{% block title %}Login - Focus Photos{% endblock %}
+
+{% block content %}
+<div class="login-container-wrapper">
+    <div class="login-box" style="width: 380px;">
+        <div class="login-content">
+            <div class="login-header">
+                <i class="fa-solid fa-camera pink-icon"></i>
+                <span>FOCUS PHOTOS</span>
+                <i class="fa-solid fa-lock cyan-icon"></i>
+            </div>
+
+            {% with messages = get_flashed_messages() %}
+              {% if messages %}
+                {% for message in messages %}
+                  <div class="alert-message">{{ message }}</div>
+                {% endfor %}
+              {% endif %}
+            {% endwith %}
+
+            <form method="POST" action="{{ url_for('login') }}" style="width: 100%;">
+                <div class="input-group-item">
+                    <input type="text" name="username" placeholder="Username" required>
+                </div>
+                
+                <div class="input-group-item" style="position: relative; margin-bottom: 20px;">
+                    <input type="password" id="login_password" name="password" placeholder="Password" style="padding-right: 45px;" required>
+                    <i class="fa-solid fa-eye" id="toggleLoginPwd" onclick="toggleLoginVisibility()" 
+                       style="position: absolute; right: 15px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #727b8e;"></i>
+                </div>
+                
+                <button type="submit" class="btn-submit">Sign in</button>
+            </form>
+
+            <div class="login-footer">
+                <a href="#" class="forgot">Forgot Password</a>
+                <a href="{{ url_for('register') }}" class="signup">Sign up</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function toggleLoginVisibility() {
+    const field = document.getElementById("login_password");
+    const icon = document.getElementById("toggleLoginPwd");
+    
+    if (field.type === "password") {
+        field.type = "text";
+        icon.classList.remove("fa-eye");
+        icon.classList.add("fa-eye-slash");
+        icon.style.color = "#35eaff";
+    } else {
+        field.type = "password";
+        icon.classList.remove("fa-eye-slash");
+        icon.style.color = "#727b8e";
+        icon.classList.add("fa-eye");
+    }
+}
+</script>
+{% endblock %}
