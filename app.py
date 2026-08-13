@@ -96,6 +96,15 @@ def dashboard():
     return render_template('dashboard.html', email=session['user_email'])
 
 
+# --- CAMERA ROUTE ---
+@app.route('/camera')
+def camera():
+    if 'user_email' not in session:
+        flash("Please log in to access the camera.", "warning")
+        return redirect(url_for('login'))
+    return render_template('camera.html')
+
+
 @app.route('/logout')
 def logout():
     session.clear()
