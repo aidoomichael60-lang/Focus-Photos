@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Focus Photos - Dashboard</title>
+    <title>Focus Photos - Google Photos</title>
     <style>
         * {
             box-sizing: border-box;
@@ -12,144 +12,554 @@
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
         }
 
+        :root {
+            --google-blue: #0b57d0;
+            --google-blue-hover: #1a73e8;
+            --google-light-blue: #e8f0fe;
+            --bg-main: #f8f9fa;
+            --card-bg: #ffffff;
+            --text-dark: #1f1f1f;
+            --text-muted: #5f6368;
+            --border-color: #e0e0e0;
+        }
+
         body {
-            background-color: #0c0d12;
-            color: #ffffff;
+            background-color: var(--bg-main);
+            color: var(--text-dark);
             min-height: 100vh;
             display: flex;
             flex-direction: column;
-            align-items: center;
-            padding: 40px 20px;
+            padding-bottom: 70px; /* Space for bottom nav */
         }
 
-        .dashboard-container {
+        /* Top Header Bar */
+        .top-header {
+            background: var(--card-bg);
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            border-bottom: 1px solid var(--border-color);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .search-bar {
+            flex: 1;
+            background: #f1f3f4;
+            border: 1px solid transparent;
+            border-radius: 28px;
+            padding: 10px 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--text-muted);
+            font-size: 0.95rem;
+        }
+
+        .search-bar input {
+            border: none;
+            background: transparent;
             width: 100%;
-            max-width: 600px;
-            background: #12141c;
-            border-radius: 20px;
-            padding: 30px;
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            box-shadow: 0 12px 32px rgba(0,0,0,0.6);
+            outline: none;
+            color: var(--text-dark);
+        }
+
+        .profile-badge {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            background: var(--google-blue);
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.9rem;
+            cursor: pointer;
+        }
+
+        /* Main Content Views */
+        .main-container {
+            max-width: 900px;
+            margin: 0 auto;
+            width: 100%;
+            padding: 16px;
+        }
+
+        .tab-view {
+            display: none;
+        }
+
+        .tab-view.active {
+            display: block;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .section-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-dark);
+        }
+
+        /* Photo Grids */
+        .photo-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+            gap: 8px;
+        }
+
+        .photo-card {
+            position: relative;
+            aspect-ratio: 1;
+            border-radius: 12px;
+            overflow: hidden;
+            background: #eaeaea;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+            border: 1px solid var(--border-color);
+        }
+
+        .photo-card img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .star-btn {
+            position: absolute;
+            top: 6px;
+            right: 6px;
+            background: rgba(255, 255, 255, 0.85);
+            border: none;
+            border-radius: 50%;
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 0.9rem;
+            backdrop-filter: blur(4px);
+        }
+
+        .star-btn.starred {
+            color: #fbbc04;
+        }
+
+        /* Empty States */
+        .empty-box {
+            text-align: center;
+            padding: 50px 20px;
+            background: var(--card-bg);
+            border-radius: 16px;
+            border: 1px solid var(--border-color);
+            margin-top: 10px;
+        }
+
+        .empty-icon {
+            font-size: 3rem;
+            display: block;
+            margin-bottom: 10px;
+            color: var(--google-blue);
+        }
+
+        /* Albums & Categories Grid */
+        .albums-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 16px;
+        }
+
+        .album-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 16px;
+            text-align: center;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .album-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(11, 87, 208, 0.1);
+        }
+
+        .album-icon {
+            font-size: 2.2rem;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        /* People Section Grid */
+        .people-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 16px;
             text-align: center;
         }
 
-        h1 {
-            font-size: 1.8rem;
-            margin-bottom: 8px;
-            color: #00d2ff;
+        .person-avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: var(--google-light-blue);
+            color: var(--google-blue);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            margin: 0 auto 8px auto;
+            border: 2px solid var(--google-blue);
         }
 
-        p.subtitle {
-            color: #a0a5b5;
-            font-size: 0.95rem;
-            margin-bottom: 28px;
-        }
-
-        .action-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 16px;
-            margin-bottom: 30px;
-        }
-
-        .action-card {
-            background: #181b26;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            padding: 20px;
+        /* Storage Card Widget */
+        .storage-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
             border-radius: 16px;
-            text-decoration: none;
-            color: white;
-            transition: transform 0.2s, border-color 0.2s;
+            padding: 24px;
+        }
+
+        .progress-bar-bg {
+            background: #e0e0e0;
+            height: 10px;
+            border-radius: 5px;
+            overflow: hidden;
+            margin: 16px 0 8px 0;
+        }
+
+        .progress-bar-fill {
+            background: var(--google-blue);
+            height: 100%;
+            width: 5%;
+            transition: width 0.3s ease;
+        }
+
+        /* Bottom White & Blue Navigation Bar */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--card-bg);
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-around;
+            padding: 8px 0;
+            z-index: 100;
+        }
+
+        .nav-item {
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 10px;
+            gap: 2px;
+            color: var(--text-muted);
+            font-size: 0.72rem;
+            font-weight: 500;
+            cursor: pointer;
+            padding: 6px 12px;
+            border-radius: 16px;
+            border: none;
+            background: transparent;
+            transition: all 0.2s;
         }
 
-        .action-card:hover {
-            transform: translateY(-3px);
-            border-color: #00d2ff;
+        .nav-item.active {
+            background: var(--google-light-blue);
+            color: var(--google-blue);
+            font-weight: 700;
         }
 
-        .action-card .icon {
-            font-size: 2rem;
+        .nav-icon {
+            font-size: 1.25rem;
         }
 
-        .action-card span {
-            font-size: 0.95rem;
-            font-weight: 600;
+        /* Floating Camera Button (Google Blue FAB) */
+        .fab-camera {
+            position: fixed;
+            bottom: 80px;
+            right: 20px;
+            background: var(--google-blue);
+            color: #ffffff;
+            width: 60px;
+            height: 60px;
+            border-radius: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.6rem;
+            box-shadow: 0 6px 18px rgba(11, 87, 208, 0.35);
+            text-decoration: none;
+            z-index: 90;
+            transition: transform 0.2s;
         }
 
-        .app-gallery-title {
-            text-align: left;
-            font-size: 1.1rem;
-            margin-bottom: 16px;
-            border-bottom: 1px solid #222;
-            padding-bottom: 8px;
-        }
-
-        .gallery-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-            gap: 10px;
-            min-height: 120px;
-        }
-
-        .gallery-img {
-            width: 100%;
-            height: 100px;
-            object-fit: cover;
-            border-radius: 8px;
-            border: 1px solid #333;
-        }
-
-        .empty-msg {
-            grid-column: 1 / -1;
-            color: #666;
-            font-size: 0.85rem;
-            padding: 30px 0;
+        .fab-camera:hover {
+            background: var(--google-blue-hover);
+            transform: scale(1.05);
         }
     </style>
 </head>
 <body>
 
-    <div class="dashboard-container">
-        <h1>Focus Photos Dashboard</h1>
-        <p class="subtitle">Welcome to your app! Choose an action below:</p>
-
-        <div class="action-grid">
-            <a href="/camera" class="action-card">
-                <span class="icon">📷</span>
-                <span>Open Camera</span>
-            </a>
-            <a href="/verify-otp" class="action-card">
-                <span class="icon">🔐</span>
-                <span>Re-verify OTP</span>
-            </a>
+    <!-- Top White & Blue Search Header -->
+    <header class="top-header">
+        <div class="search-bar">
+            <span>🔍</span>
+            <input type="text" id="search-input" placeholder="Search photos, people, documents...">
         </div>
+        <div class="profile-badge" title="User Account">FP</div>
+    </header>
 
-        <h2 class="app-gallery-title">Saved App Photos</h2>
-        <div id="gallery-container" class="gallery-grid">
-            <p class="empty-msg">No saved photos yet. Tap "Open Camera" to take one!</p>
-        </div>
-    </div>
+    <main class="main-container">
+
+        <!-- TAB 1: ALL PHOTOS -->
+        <section id="view-photos" class="tab-view active">
+            <div class="section-header">
+                <h2 class="section-title">Photos Feed</h2>
+                <span id="photo-count" style="font-size: 0.85rem; color: var(--text-muted);">0 photos</span>
+            </div>
+            <div id="grid-photos" class="photo-grid"></div>
+            <div id="empty-photos" class="empty-box">
+                <span class="empty-icon">🖼️</span>
+                <h3>No photos yet</h3>
+                <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px;">Tap the blue camera button to take your first photo!</p>
+            </div>
+        </section>
+
+        <!-- TAB 2: FAVORITES -->
+        <section id="view-favorites" class="tab-view">
+            <div class="section-header">
+                <h2 class="section-title">⭐ Favorites</h2>
+            </div>
+            <div id="grid-favorites" class="photo-grid"></div>
+            <div id="empty-favorites" class="empty-box">
+                <span class="empty-icon">⭐</span>
+                <h3>No favorite photos</h3>
+                <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px;">Tap the star icon on any photo in your feed to save it here.</p>
+            </div>
+        </section>
+
+        <!-- TAB 3: ALBUMS -->
+        <section id="view-albums" class="tab-view">
+            <div class="section-header">
+                <h2 class="section-title">📁 Albums & Collections</h2>
+            </div>
+            <div class="albums-grid">
+                <div class="album-card">
+                    <span class="album-icon">📸</span>
+                    <h4 style="font-size:0.95rem;">Camera Roll</h4>
+                    <p id="album-count-camera" style="font-size:0.75rem; color:var(--text-muted);">0 Items</p>
+                </div>
+                <div class="album-card">
+                    <span class="album-icon">⭐</span>
+                    <h4 style="font-size:0.95rem;">Favorites</h4>
+                    <p id="album-count-favs" style="font-size:0.75rem; color:var(--text-muted);">0 Items</p>
+                </div>
+                <div class="album-card">
+                    <span class="album-icon">📱</span>
+                    <h4 style="font-size:0.95rem;">Screenshots</h4>
+                    <p style="font-size:0.75rem; color:var(--text-muted);">0 Items</p>
+                </div>
+                <div class="album-card">
+                    <span class="album-icon">📄</span>
+                    <h4 style="font-size:0.95rem;">Documents</h4>
+                    <p style="font-size:0.75rem; color:var(--text-muted);">Auto-detected</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 4: DOCUMENTS -->
+        <section id="view-documents" class="tab-view">
+            <div class="section-header">
+                <h2 class="section-title">📄 Document Scanner</h2>
+            </div>
+            <div class="empty-box">
+                <span class="empty-icon">🧾</span>
+                <h3>Document Library</h3>
+                <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px;">Receipts, ID cards, and notes you capture are stored here.</p>
+            </div>
+        </section>
+
+        <!-- TAB 5: PEOPLE & PETS -->
+        <section id="view-people" class="tab-view">
+            <div class="section-header">
+                <h2 class="section-title">👥 People & Pets</h2>
+            </div>
+            <div class="people-grid">
+                <div>
+                    <div class="person-avatar">👤</div>
+                    <p style="font-size:0.8rem; font-weight:600;">You</p>
+                </div>
+                <div>
+                    <div class="person-avatar">🐶</div>
+                    <p style="font-size:0.8rem; font-weight:600;">Pets</p>
+                </div>
+                <div>
+                    <div class="person-avatar">➕</div>
+                    <p style="font-size:0.8rem; font-weight:600; color:var(--google-blue);">Add Person</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 6: REAL STORAGE -->
+        <section id="view-storage" class="tab-view">
+            <div class="section-header">
+                <h2 class="section-title">☁️ Storage Details</h2>
+            </div>
+            <div class="storage-card">
+                <h3 style="font-size: 1rem; color: var(--text-dark);">Browser Account Storage</h3>
+                <div class="progress-bar-bg">
+                    <div id="storage-progress" class="progress-bar-fill"></div>
+                </div>
+                <p id="storage-text" style="font-size: 0.85rem; color: var(--text-muted);">Calculating real storage usage...</p>
+
+                <button id="btn-clear-storage" style="margin-top:20px; background:#dc2626; color:#fff; border:none; padding:10px 16px; border-radius:12px; font-weight:600; cursor:pointer;">
+                    🗑️ Clear Saved App Photos
+                </button>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Floating Blue Camera Button -->
+    <a href="/camera" class="fab-camera" title="Open Camera">📷</a>
+
+    <!-- Bottom Navigation Bar (White & Blue) -->
+    <nav class="bottom-nav">
+        <button class="nav-item active" onclick="switchTab('photos', this)">
+            <span class="nav-icon">🖼️</span>
+            <span>Photos</span>
+        </button>
+        <button class="nav-item" onclick="switchTab('favorites', this)">
+            <span class="nav-icon">⭐</span>
+            <span>Favorites</span>
+        </button>
+        <button class="nav-item" onclick="switchTab('albums', this)">
+            <span class="nav-icon">📁</span>
+            <span>Albums</span>
+        </button>
+        <button class="nav-item" onclick="switchTab('documents', this)">
+            <span class="nav-icon">📄</span>
+            <span>Docs</span>
+        </button>
+        <button class="nav-item" onclick="switchTab('people', this)">
+            <span class="nav-icon">👥</span>
+            <span>People</span>
+        </button>
+        <button class="nav-item" onclick="switchTab('storage', this)">
+            <span class="nav-icon">☁️</span>
+            <span>Storage</span>
+        </button>
+    </nav>
 
     <script>
-        // Load photos saved locally in the browser
+        // Tab Switcher Logic
+        function switchTab(tabName, btnElement) {
+            document.querySelectorAll('.tab-view').forEach(view => view.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+
+            document.getElementById(`view-${tabName}`).classList.add('active');
+            btnElement.classList.add('active');
+        }
+
+        // App Photo Storage & Rendering Logic
         document.addEventListener('DOMContentLoaded', () => {
-            const galleryContainer = document.getElementById('gallery-container');
+            loadPhotos();
+            calculateStorage();
+
+            document.getElementById('btn-clear-storage').addEventListener('click', () => {
+                if (confirm("Are you sure you want to delete all saved photos?")) {
+                    localStorage.removeItem('app_photos');
+                    loadPhotos();
+                    calculateStorage();
+                }
+            });
+        });
+
+        function loadPhotos() {
+            const gridPhotos = document.getElementById('grid-photos');
+            const gridFavs = document.getElementById('grid-favorites');
+            const emptyPhotos = document.getElementById('empty-photos');
+            const emptyFavs = document.getElementById('empty-favorites');
+            
             const appPhotos = JSON.parse(localStorage.getItem('app_photos') || '[]');
 
+            document.getElementById('photo-count').innerText = `${appPhotos.length} photos`;
+            document.getElementById('album-count-camera').innerText = `${appPhotos.length} Items`;
+
+            gridPhotos.innerHTML = '';
+            gridFavs.innerHTML = '';
+
+            const favPhotos = appPhotos.filter(p => p.starred);
+            document.getElementById('album-count-favs').innerText = `${favPhotos.length} Items`;
+
+            // Render Photos Feed
             if (appPhotos.length > 0) {
-                galleryContainer.innerHTML = '';
-                appPhotos.reverse().forEach(photo => {
-                    const img = document.createElement('img');
-                    img.src = photo.data;
-                    img.className = 'gallery-img';
-                    galleryContainer.appendChild(img);
+                emptyPhotos.style.display = 'none';
+                appPhotos.slice().reverse().forEach(photo => {
+                    gridPhotos.appendChild(createPhotoCard(photo));
                 });
+            } else {
+                emptyPhotos.style.display = 'block';
             }
-        });
+
+            // Render Favorites Feed
+            if (favPhotos.length > 0) {
+                emptyFavs.style.display = 'none';
+                favPhotos.slice().reverse().forEach(photo => {
+                    gridFavs.appendChild(createPhotoCard(photo));
+                });
+            } else {
+                emptyFavs.style.display = 'block';
+            }
+        }
+
+        function createPhotoCard(photo) {
+            const card = document.createElement('div');
+            card.className = 'photo-card';
+
+            const isStarred = photo.starred ? 'starred' : '';
+            const starIcon = photo.starred ? '★' : '☆';
+
+            card.innerHTML = `
+                <img src="${photo.data}" alt="Photo" />
+                <button class="star-btn ${isStarred}" onclick="toggleStar(${photo.id})">${starIcon}</button>
+            `;
+            return card;
+        }
+
+        function toggleStar(photoId) {
+            let appPhotos = JSON.parse(localStorage.getItem('app_photos') || '[]');
+            appPhotos = appPhotos.map(p => {
+                if (p.id === photoId) p.starred = !p.starred;
+                return p;
+            });
+            localStorage.setItem('app_photos', JSON.stringify(appPhotos));
+            loadPhotos();
+        }
+
+        function calculateStorage() {
+            const appPhotos = localStorage.getItem('app_photos') || '';
+            const bytesUsed = new Blob([appPhotos]).size;
+            const megabytesUsed = (bytesUsed / (1024 * 1024)).toFixed(2);
+
+            // Assume ~5MB standard localstorage browser limit
+            const percentage = Math.min(((megabytesUsed / 5) * 100), 100).toFixed(1);
+
+            document.getElementById('storage-progress').style.width = `${percentage}%`;
+            document.getElementById('storage-text').innerText = `${megabytesUsed} MB used of 5.0 MB browser storage allocated (${percentage}% full)`;
+        }
     </script>
 </body>
 </html>
