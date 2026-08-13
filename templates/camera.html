@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Focus Photos - Camera</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body {
+            background-color: #0b0b0e;
+            color: #ffffff;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .camera-container {
+            position: relative;
+            width: 100vw;
+            max-width: 480px;
+            height: 100vh;
+            max-height: 900px;
+            background: #000;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            overflow: hidden;
+        }
+
+        @media (min-width: 500px) {
+            .camera-container {
+                height: 92vh;
+                border-radius: 24px;
+                box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8);
+            }
+        }
+
+        .camera-top-bar {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 14px;
+            background: linear-gradient(180deg, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 100%);
+            z-index: 30;
+        }
+
+        .icon-btn {
+            background: rgba(255, 255, 255, 0.18);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: #fff;
+            padding: 8px 12px;
+            border-radius: 20px;
+            font-size: 0.78rem;
+            font-weight: 500;
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            text-decoration: none;
+        }
+
+        .icon-btn.active {
+            background: #ffffff;
+            color: #000000;
+            border-color: #ffffff;
+            font-weight: 600;
+        }
+
+        .viewfinder-wrapper {
+            position: relative;
+            flex: 1;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #121214;
+        }
+
+        #camera-video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.1s ease-out;
+        }
+
+        .grid-overlay {
+            position: absolute;
+            inset: 0;
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            grid-template-rows: 1fr 1fr 1fr;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .grid-box {
+            border: 1px solid rgba(255, 255, 255, 0.22);
+        }
+
+        .grid-overlay.hidden {
+            display: none;
+        }
+
+        .countdown-overlay {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 8.5rem;
+            font-weight: 800;
+            color: #ffffff;
+            text-shadow: 0 4px 30px rgba(0,0,0,0.8);
+            z-index: 20;
+            pointer-events: none;
+            animation: popIn 0.8s ease infinite;
+        }
+
+        .countdown-overlay.hidden {
+            display: none;
+        }
+
+        @keyframes popIn {
+            0% { transform: scale(0.4); opacity: 0; }
+            50% { transform: scale(1.15); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .slider-controls {
+            position: absolute;
+            bottom: 120px;
+            left: 16px;
+            right: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 25;
+            background: rgba(18, 18, 20, 0.65);
+            padding: 12px 16px;
+            border-radius: 16px;
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .slider-group {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: #e4e4e7;
+            font-size: 0.78rem;
+            font-weight: 500;
+        }
+
+        .slider-group span {
+            width: 65px;
+        }
+
+        .slider-group input[type="range"] {
+            flex: 1;
+            accent-color: #007aff;
+            height: 4px;
+            border-radius: 2px;
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .camera-bottom-bar {
+            background: #000000;
+            padding: 14px 0 24px 0;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            z-index: 30;
+        }
+
+        .filter-carousel {
+            display: flex;
+            gap: 14px;
+            overflow-x: auto;
+            padding: 0 20px;
+            scrollbar-width: none;
+        }
+
+        .filter-carousel::-webkit-scrollbar {
+            display: none;
+        }
+
+        .filter-option {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            opacity: 0.55;
+            transition: opacity 0.2s ease, transform 0.2s ease;
+            flex-shrink: 0;
+        }
+
+        .filter-option.active {
+            opacity: 1;
+            transform: scale(1.06);
+        }
+
+        .filter-thumb {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            border: 2px solid transparent;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+        }
+
+        .filter-option.active .filter-thumb {
+            border-color: #007aff;
+            box-shadow: 0 0 0 2px rgba(0, 122, 255, 0.4);
+        }
+
+        .filter-label {
+            color: #ffffff;
+            font-size: 0.7rem;
+            font-weight: 500;
+        }
+
+        .shutter-row {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .shutter-btn {
+            width: 74px;
+            height: 74px;
+            border-radius: 50%;
+            border: 4px solid #ffffff;
+            background: transparent;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: transform 0.1s ease;
+        }
+
+        .shutter-inner {
+            width: 58px;
+            height: 58px;
+            border-radius: 50%;
+            background: #ffffff;
+            transition: transform 0.1s ease;
+        }
+
+        .shutter-btn:active {
+            transform: scale(0.92);
+        }
+
+        .edit-modal {
+            position: fixed;
+            inset: 0;
+            background: #000000;
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 16px;
+        }
+
+        .edit-modal.hidden {
+            display: none;
+        }
+
+        .edit-preview-container {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            padding: 10px 0;
+        }
+
+        #edit-canvas {
+            max-width: 100%;
+            max-height: 100%;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
+        }
+
+        .edit-controls {
+            background: #18181b;
+            padding: 16px;
+            border-radius: 18px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .edit-actions {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .btn-secondary {
+            flex: 1;
+            background: #27272a;
+            color: #ffffff;
+            border: none;
+            padding: 14px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+        }
+
+        .btn-primary {
+            flex: 1;
+            background: #007aff;
+            color: #ffffff;
+            border: none;
+            padding: 14px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="camera-container">
+        <!-- Top Action Bar -->
+        <div class="camera-top-bar">
+            <button id="btn-back" class="icon-btn" onclick="window.location.href='/dashboard'">← Dashboard</button>
+            <button id="btn-flash" class="icon-btn">⚡ Flash</button>
+            <button id="btn-night" class="icon-btn">🌙 Night</button>
+            <button id="btn-grid" class="icon-btn">🌐 Grid</button>
+            <button id="btn-timer" class="icon-btn">⏱️ Off</button>
+            <button id="btn-flip" class="icon-btn">🔄 Flip</button>
+        </div>
+
+        <!-- Live Viewfinder -->
+        <div class="viewfinder-wrapper">
+            <video id="camera-video" autoplay playsinline muted></video>
+
+            <div id="grid-overlay" class="grid-overlay hidden">
+                <div class="grid-box"></div><div class="grid-box"></div><div class="grid-box"></div>
+                <div class="grid-box"></div><div class="grid-box"></div><div class="grid-box"></div>
+                <div class="grid-box"></div><div class="grid-box"></div><div class="grid-box"></div>
+            </div>
+
+            <div id="countdown-overlay" class="countdown-overlay hidden">3</div>
+
+            <div class="slider-controls">
+                <div class="slider-group">
+                    <span>🔍 Zoom</span>
+                    <input type="range" id="slider-zoom" min="1" max="4" step="0.1" value="1">
+                </div>
+                <div class="slider-group">
+                    <span>☀️ EV</span>
+                    <input type="range" id="slider-ev" min="-2" max="2" step="0.5" value="0">
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottom Controls -->
+        <div class="camera-bottom-bar">
+            <div class="filter-carousel" id="filter-carousel">
+                <div class="filter-option active" data-filter="normal">
+                    <div class="filter-thumb" style="background: #444;"></div>
+                    <span class="filter-label">Normal</span>
+                </div>
+                <div class="filter-option" data-filter="vivid">
+                    <div class="filter-thumb" style="background: linear-gradient(45deg, #ff0055, #ffaa00);"></div>
+                    <span class="filter-label">Vivid</span>
+                </div>
+                <div class="filter-option" data-filter="bw">
+                    <div class="filter-thumb" style="background: linear-gradient(45deg, #000, #fff);"></div>
+                    <span class="filter-label">B&W</span>
+                </div>
+                <div class="filter-option" data-filter="sepia">
+                    <div class="filter-thumb" style="background: #704214;"></div>
+                    <span class="filter-label">Sepia</span>
+                </div>
+                <div class="filter-option" data-filter="warm">
+                    <div class="filter-thumb" style="background: #ffaa55;"></div>
+                    <span class="filter-label">Warm</span>
+                </div>
+                <div class="filter-option" data-filter="cool">
+                    <div class="filter-thumb" style="background: #55aaff;"></div>
+                    <span class="filter-label">Cool</span>
+                </div>
+                <div class="filter-option" data-filter="fade">
+                    <div class="filter-thumb" style="background: #888888;"></div>
+                    <span class="filter-label">Fade</span>
+                </div>
+                <div class="filter-option" data-filter="dramatic">
+                    <div class="filter-thumb" style="background: linear-gradient(45deg, #111, #444);"></div>
+                    <span class="filter-label">Dramatic</span>
+                </div>
+            </div>
+
+            <div class="shutter-row">
+                <button id="btn-shutter" class="shutter-btn" aria-label="Take Photo">
+                    <div class="shutter-inner"></div>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <canvas id="snapshot-canvas" style="display: none;"></canvas>
+
+    <!-- Post-Capture Edit Screen Modal -->
+    <div id="edit-modal" class="edit-modal hidden">
+        <div class="edit-preview-container">
+            <canvas id="edit-canvas"></canvas>
+        </div>
+
+        <div class="edit-controls">
+            <div class="slider-group">
+                <span>Brightness</span>
+                <input type="range" id="edit-brightness" min="50" max="150" value="100">
+            </div>
+            <div class="slider-group">
+                <span>Contrast</span>
+                <input type="range" id="edit-contrast" min="50" max="150" value="100">
+            </div>
+            <div class="slider-group">
+                <span>Saturation</span>
+                <input type="range" id="edit-saturation" min="0" max="200" value="100">
+            </div>
+            <button id="btn-rotate" class="icon-btn" style="width: 100%; justify-content: center; padding: 10px; margin-top: 4px;">🔄 Rotate 90°</button>
+        </div>
+
+        <div class="edit-actions">
+            <button id="btn-retake" class="btn-secondary">Retake</button>
+            <button id="btn-save" class="btn-primary">Save Photo</button>
+        </div>
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const video = document.getElementById('camera-video');
+        const gridOverlay = document.getElementById('grid-overlay');
+        const countdownOverlay = document.getElementById('countdown-overlay');
+        const snapshotCanvas = document.getElementById('snapshot-canvas');
+        const editModal = document.getElementById('edit-modal');
+        const editCanvas = document.getElementById('edit-canvas');
+
+        const state = {
+            stream: null,
+            facingMode: 'environment',
+            selectedFilter: 'normal',
+            ev: 0,
+            zoom: 1,
+            isNight: false,
+            flash: false,
+            timerSec: 0,
+            grid: false,
+            capturedImage: null,
+            editBrightness: 100,
+            editContrast: 100,
+            editSaturation: 100,
+            editRotation: 0
+        };
+
+        const filterPresets = {
+            normal: '',
+            vivid: 'saturate(1.8) contrast(1.1)',
+            bw: 'grayscale(1)',
+            sepia: 'sepia(0.9)',
+            warm: 'sepia(0.35) saturate(1.3)',
+            cool: 'hue-rotate(170deg) saturate(1.1)',
+            fade: 'contrast(0.85) brightness(1.1) saturate(0.8)',
+            dramatic: 'contrast(1.5) saturate(1.2) brightness(0.9)'
+        };
+
+        async function startCamera() {
+            if (state.stream) {
+                state.stream.getTracks().forEach(track => track.stop());
+            }
+
+            try {
+                const constraints = {
+                    video: { facingMode: state.facingMode, width: { ideal: 1920 }, height: { ideal: 1080 } },
+                    audio: false
+                };
+
+                state.stream = await navigator.mediaDevices.getUserMedia(constraints);
+                video.srcObject = state.stream;
+                await video.play();
+                updateEngineViewfinder();
+            } catch (err) {
+                console.error('Camera initialization error:', err);
+            }
+        }
+
+        function updateEngineViewfinder() {
+            let cssFilters = [];
+            if (filterPresets[state.selectedFilter]) cssFilters.push(filterPresets[state.selectedFilter]);
+            cssFilters.push(`brightness(${100 + (state.ev * 20)}%)`);
+            if (state.isNight) cssFilters.push('brightness(130%) contrast(110%) saturate(120%)');
+
+            video.style.filter = cssFilters.join(' ');
+            const mirrorScale = state.facingMode === 'user' ? -1 : 1;
+            video.style.transform = `scale(${state.zoom}) scaleX(${mirrorScale})`;
+        }
+
+        document.querySelectorAll('.filter-option').forEach(option => {
+            option.addEventListener('click', () => {
+                document.querySelectorAll('.filter-option').forEach(o => o.classList.remove('active'));
+                option.classList.add('active');
+                state.selectedFilter = option.dataset.filter;
+                updateEngineViewfinder();
+            });
+        });
+
+        document.getElementById('slider-zoom').addEventListener('input', (e) => { state.zoom = parseFloat(e.target.value); updateEngineViewfinder(); });
+        document.getElementById('slider-ev').addEventListener('input', (e) => { state.ev = parseFloat(e.target.value); updateEngineViewfinder(); });
+
+        document.getElementById('btn-flash').addEventListener('click', function() {
+            state.flash = !state.flash;
+            this.classList.toggle('active', state.flash);
+        });
+
+        document.getElementById('btn-night').addEventListener('click', function() {
+            state.isNight = !state.isNight;
+            this.classList.toggle('active', state.isNight);
+            updateEngineViewfinder();
+        });
+
+        document.getElementById('btn-grid').addEventListener('click', function() {
+            state.grid = !state.grid;
+            this.classList.toggle('active', state.grid);
+            gridOverlay.classList.toggle('hidden', !state.grid);
+        });
+
+        document.getElementById('btn-timer').addEventListener('click', function() {
+            if (state.timerSec === 0) state.timerSec = 3;
+            else if (state.timerSec === 3) state.timerSec = 10;
+            else state.timerSec = 0;
+            this.classList.toggle('active', state.timerSec > 0);
+            this.innerText = state.timerSec === 0 ? '⏱️ Off' : `⏱️ ${state.timerSec}s`;
+        });
+
+        document.getElementById('btn-flip').addEventListener('click', () => {
+            state.facingMode = state.facingMode === 'user' ? 'environment' : 'user';
+            startCamera();
+        });
+
+        document.getElementById('btn-shutter').addEventListener('click', () => {
+            if (state.timerSec > 0) {
+                let count = state.timerSec;
+                countdownOverlay.innerText = count;
+                countdownOverlay.classList.remove('hidden');
+                const interval = setInterval(() => {
+                    count--;
+                    if (count > 0) {
+                        countdownOverlay.innerText = count;
+                    } else {
+                        clearInterval(interval);
+                        countdownOverlay.classList.add('hidden');
+                        takeSnapshot();
+                    }
+                }, 1000);
+            } else {
+                takeSnapshot();
+            }
+        });
+
+        function takeSnapshot() {
+            const ctx = snapshotCanvas.getContext('2d');
+            snapshotCanvas.width = video.videoWidth || 1280;
+            snapshotCanvas.height = video.videoHeight || 720;
+            ctx.filter = video.style.filter;
+
+            ctx.save();
+            if (state.facingMode === 'user') {
+                ctx.translate(snapshotCanvas.width, 0);
+                ctx.scale(-1, 1);
+            }
+            ctx.drawImage(video, 0, 0, snapshotCanvas.width, snapshotCanvas.height);
+            ctx.restore();
+
+            const img = new Image();
+            img.onload = () => {
+                state.capturedImage = img;
+                editModal.classList.remove('hidden');
+                renderEditCanvas();
+            };
+            img.src = snapshotCanvas.toDataURL('image/jpeg');
+        }
+
+        function renderEditCanvas() {
+            if (!state.capturedImage) return;
+            const ctx = editCanvas.getContext('2d');
+            const img = state.capturedImage;
+            const isVertical = state.editRotation % 180 !== 0;
+            editCanvas.width = isVertical ? img.height : img.width;
+            editCanvas.height = isVertical ? img.width : img.height;
+
+            ctx.save();
+            ctx.clearRect(0, 0, editCanvas.width, editCanvas.height);
+            ctx.filter = `brightness(${state.editBrightness}%) contrast(${state.editContrast}%) saturate(${state.editSaturation}%)`;
+            ctx.translate(editCanvas.width / 2, editCanvas.height / 2);
+            ctx.rotate((state.editRotation * Math.PI) / 180);
+            ctx.drawImage(img, -img.width / 2, -img.height / 2);
+            ctx.restore();
+        }
+
+        document.getElementById('edit-brightness').addEventListener('input', (e) => { state.editBrightness = e.target.value; renderEditCanvas(); });
+        document.getElementById('edit-contrast').addEventListener('input', (e) => { state.editContrast = e.target.value; renderEditCanvas(); });
+        document.getElementById('edit-saturation').addEventListener('input', (e) => { state.editSaturation = e.target.value; renderEditCanvas(); });
+        document.getElementById('btn-rotate').addEventListener('click', () => { state.editRotation = (state.editRotation + 90) % 360; renderEditCanvas(); });
+        document.getElementById('btn-retake').addEventListener('click', () => editModal.classList.add('hidden'));
+
+        document.getElementById('btn-save').addEventListener('click', () => {
+            const link = document.createElement('a');
+            link.download = `FocusPhoto_${Date.now()}.jpg`;
+            link.href = editCanvas.toDataURL('image/jpeg', 0.92);
+            link.click();
+            editModal.classList.add('hidden');
+        });
+
+        startCamera();
+    });
+    </script>
+</body>
+</html>
