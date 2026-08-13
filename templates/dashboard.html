@@ -31,7 +31,7 @@
             overflow: hidden;
         }
 
-        /* Top Bar */
+        /* Top Header Bar */
         .top-header {
             position: fixed;
             top: 0; left: 0; right: 0;
@@ -74,6 +74,105 @@
             font-size: 0.95rem;
         }
 
+        /* Profile Avatar Button */
+        .profile-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--google-blue);
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.95rem;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: border-color 0.2s;
+        }
+
+        .profile-btn:hover {
+            border-color: #a8c7fa;
+        }
+
+        /* Profile Popup Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(0, 0, 0, 0.4);
+            z-index: 200;
+            display: flex;
+            align-items: flex-start;
+            justify-content: flex-end;
+            padding: 70px 24px 0 0;
+        }
+
+        .modal-overlay.hidden { display: none; }
+
+        .profile-card {
+            background: #ffffff;
+            border-radius: 24px;
+            width: 320px;
+            padding: 24px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            border: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            position: relative;
+        }
+
+        .profile-avatar-large {
+            width: 72px;
+            height: 72px;
+            border-radius: 50%;
+            background: var(--google-blue);
+            color: #ffffff;
+            font-size: 1.8rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 12px;
+        }
+
+        .profile-detail-box {
+            width: 100%;
+            background: var(--sidebar-bg);
+            border-radius: 12px;
+            padding: 12px;
+            margin: 16px 0;
+            text-align: left;
+            font-size: 0.85rem;
+        }
+
+        .profile-detail-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .profile-detail-item:last-child { border-bottom: none; }
+
+        .btn-logout {
+            width: 100%;
+            padding: 12px;
+            background: #dc2626;
+            color: #ffffff;
+            border: none;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            text-decoration: none;
+            display: block;
+            transition: background 0.2s;
+        }
+
+        .btn-logout:hover { background: #b91c1c; }
+
         /* App Layout Container */
         .app-body {
             display: flex;
@@ -82,7 +181,7 @@
             height: calc(100vh - 64px);
         }
 
-        /* Left Navigation Sidebar (Google Photos Style) */
+        /* Left Navigation Sidebar */
         .left-sidebar {
             width: 240px;
             background: var(--sidebar-bg);
@@ -109,12 +208,9 @@
             background: transparent;
             width: 100%;
             text-align: left;
-            transition: background 0.15s ease;
         }
 
-        .nav-link:hover {
-            background: #e9ecef;
-        }
+        .nav-link:hover { background: #e9ecef; }
 
         .nav-link.active {
             background: var(--google-light-blue);
@@ -122,11 +218,6 @@
             font-weight: 700;
         }
 
-        .nav-icon {
-            font-size: 1.25rem;
-        }
-
-        /* Main Content Panel */
         .main-content {
             flex: 1;
             padding: 24px;
@@ -136,7 +227,6 @@
         .tab-view { display: none; }
         .tab-view.active { display: block; }
 
-        /* Photo Grids */
         .photo-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
@@ -153,22 +243,7 @@
             border: 1px solid var(--border-color);
         }
 
-        .photo-card img {
-            width: 100%; height: 100%; object-fit: cover;
-        }
-
-        .star-btn {
-            position: absolute;
-            top: 8px; right: 8px;
-            background: rgba(255, 255, 255, 0.9);
-            border: none;
-            border-radius: 50%;
-            width: 28px; height: 28px;
-            display: flex; align-items: center; justify-content: center;
-            cursor: pointer;
-        }
-
-        .star-btn.starred { color: #fbbc04; }
+        .photo-card img { width: 100%; height: 100%; object-fit: cover; }
 
         .empty-box {
             text-align: center;
@@ -179,11 +254,9 @@
             margin-top: 16px;
         }
 
-        /* Floating Camera Button */
         .fab-camera {
             position: fixed;
-            bottom: 32px;
-            right: 32px;
+            bottom: 32px; right: 32px;
             background: var(--google-blue);
             color: #ffffff;
             width: 60px; height: 60px;
@@ -195,7 +268,6 @@
             z-index: 90;
         }
 
-        /* Responsive Mobile Layout */
         @media (max-width: 768px) {
             .left-sidebar {
                 position: fixed;
@@ -217,6 +289,7 @@
             }
             .app-body { height: calc(100vh - 124px); }
             .fab-camera { bottom: 76px; right: 20px; }
+            .modal-overlay { justify-content: center; padding: 70px 0 0 0; }
         }
     </style>
 </head>
@@ -231,35 +304,64 @@
             <span>🔍</span>
             <input type="text" placeholder="Search photos, people, documents...">
         </div>
-        <div style="width:36px; height:36px; border-radius:50%; background:var(--google-blue); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:700;">FP</div>
+        <!-- Profile Avatar Button -->
+        <div id="btn-profile" class="profile-btn" title="Account Details">FP</div>
     </header>
 
+    <!-- Profile Popup Modal -->
+    <div id="profile-modal" class="modal-overlay hidden">
+        <div class="profile-card">
+            <button id="btn-close-profile" style="position:absolute; top:16px; right:16px; background:none; border:none; font-size:1.2rem; cursor:pointer; color:var(--text-muted);">✕</button>
+            
+            <div class="profile-avatar-large">FP</div>
+            <h3 style="font-size:1.1rem; color:var(--text-dark);">qphocus User</h3>
+            <p style="font-size:0.8rem; color:var(--text-muted);">Verified Account</p>
+
+            <div class="profile-detail-box">
+                <div class="profile-detail-item">
+                    <span style="color:var(--text-muted);">Email:</span>
+                    <span style="font-weight:600;">qphocus@gmail.com</span>
+                </div>
+                <div class="profile-detail-item">
+                    <span style="color:var(--text-muted);">Phone:</span>
+                    <span style="font-weight:600;">0548327035</span>
+                </div>
+                <div class="profile-detail-item">
+                    <span style="color:var(--text-muted);">Status:</span>
+                    <span style="color:#16a34a; font-weight:700;">🟢 Active</span>
+                </div>
+            </div>
+
+            <a href="/logout" class="btn-logout">🚪 Log out</a>
+        </div>
+    </div>
+
+    <!-- Main Body -->
     <div class="app-body">
         <!-- Left Sidebar Navigation Bar -->
         <nav class="left-sidebar">
             <button class="nav-link active" onclick="switchTab('photos', this)">
-                <span class="nav-icon">🖼️</span> <span>Photos</span>
+                <span style="font-size:1.25rem;">🖼️</span> <span>Photos</span>
             </button>
             <button class="nav-link" onclick="switchTab('favorites', this)">
-                <span class="nav-icon">⭐</span> <span>Favorites</span>
+                <span style="font-size:1.25rem;">⭐</span> <span>Favorites</span>
             </button>
             <button class="nav-link" onclick="switchTab('albums', this)">
-                <span class="nav-icon">📁</span> <span>Albums</span>
+                <span style="font-size:1.25rem;">📁</span> <span>Albums</span>
             </button>
             <button class="nav-link" onclick="switchTab('documents', this)">
-                <span class="nav-icon">📄</span> <span>Documents</span>
+                <span style="font-size:1.25rem;">📄</span> <span>Documents</span>
             </button>
             <button class="nav-link" onclick="switchTab('people', this)">
-                <span class="nav-icon">👥</span> <span>People</span>
+                <span style="font-size:1.25rem;">👥</span> <span>People</span>
             </button>
             <button class="nav-link" onclick="switchTab('storage', this)">
-                <span class="nav-icon">☁️</span> <span>Storage</span>
+                <span style="font-size:1.25rem;">☁️</span> <span>Storage</span>
             </button>
         </nav>
 
         <!-- Main Content Area -->
         <main class="main-content">
-
             <!-- TAB 1: ALL PHOTOS -->
             <section id="view-photos" class="tab-view active">
                 <h2>Photos</h2>
@@ -291,11 +393,6 @@
                         <h4>Camera Roll</h4>
                         <p id="count-camera" style="color:var(--text-muted); font-size:0.8rem;">0 Items</p>
                     </div>
-                    <div style="background:#f1f3f4; padding:20px; border-radius:16px; text-align:center;">
-                        <span style="font-size:2rem;">⭐</span>
-                        <h4>Starred Photos</h4>
-                        <p id="count-favs" style="color:var(--text-muted); font-size:0.8rem;">0 Items</p>
-                    </div>
                 </div>
             </section>
 
@@ -305,7 +402,7 @@
                 <div class="empty-box">
                     <span style="font-size:3rem;">🧾</span>
                     <h3>Document Vault</h3>
-                    <p style="color:var(--text-muted); margin-top:4px;">Scanned documents, IDs, and receipts will show here.</p>
+                    <p style="color:var(--text-muted); margin-top:4px;">Scanned documents and IDs will show here.</p>
                 </div>
             </section>
 
@@ -329,10 +426,8 @@
                         <div id="storage-bar" style="background:var(--google-blue); height:100%; width:0%;"></div>
                     </div>
                     <p id="storage-text" style="color:var(--text-muted); font-size:0.85rem;">Calculating usage...</p>
-                    <button onclick="clearStorage()" style="margin-top:16px; background:#dc2626; color:#fff; border:none; padding:10px 16px; border-radius:12px; font-weight:600; cursor:pointer;">Clear App Photos</button>
                 </div>
             </section>
-
         </main>
     </div>
 
@@ -340,6 +435,20 @@
     <a href="/camera" class="fab-camera" title="Open Camera">📷</a>
 
     <script>
+        // Profile Modal Logic
+        const btnProfile = document.getElementById('btn-profile');
+        const profileModal = document.getElementById('profile-modal');
+        const btnCloseProfile = document.getElementById('btn-close-profile');
+
+        btnProfile.addEventListener('click', () => profileModal.classList.remove('hidden'));
+        btnCloseProfile.addEventListener('click', () => profileModal.classList.add('hidden'));
+
+        // Close modal if user clicks outside of card
+        profileModal.addEventListener('click', (e) => {
+            if (e.target === profileModal) profileModal.classList.add('hidden');
+        });
+
+        // Tab Switching Logic
         function switchTab(tabName, btn) {
             document.querySelectorAll('.tab-view').forEach(t => t.classList.remove('active'));
             document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
@@ -349,7 +458,6 @@
 
         document.addEventListener('DOMContentLoaded', () => {
             loadPhotos();
-            calculateStorage();
         });
 
         function loadPhotos() {
@@ -359,7 +467,6 @@
             
             document.getElementById('count-camera').innerText = `${photos.length} Items`;
             const favs = photos.filter(p => p.starred);
-            document.getElementById('count-favs').innerText = `${favs.length} Items`;
 
             gridPhotos.innerHTML = '';
             gridFavs.innerHTML = '';
@@ -376,34 +483,8 @@
         function createCard(photo) {
             const card = document.createElement('div');
             card.className = 'photo-card';
-            card.innerHTML = `
-                <img src="${photo.data}" />
-                <button class="star-btn ${photo.starred ? 'starred' : ''}" onclick="toggleStar(${photo.id})">${photo.starred ? '★' : '☆'}</button>
-            `;
+            card.innerHTML = `<img src="${photo.data}" />`;
             return card;
-        }
-
-        function toggleStar(id) {
-            let photos = JSON.parse(localStorage.getItem('app_photos') || '[]');
-            photos = photos.map(p => { if (p.id === id) p.starred = !p.starred; return p; });
-            localStorage.setItem('app_photos', JSON.stringify(photos));
-            loadPhotos();
-        }
-
-        function calculateStorage() {
-            const data = localStorage.getItem('app_photos') || '';
-            const mb = (new Blob([data]).size / (1024 * 1024)).toFixed(2);
-            const pct = Math.min(((mb / 5) * 100), 100).toFixed(1);
-            document.getElementById('storage-bar').style.width = `${pct}%`;
-            document.getElementById('storage-text').innerText = `${mb} MB used of 5.0 MB browser quota (${pct}%)`;
-        }
-
-        function clearStorage() {
-            if (confirm("Delete all saved app photos?")) {
-                localStorage.removeItem('app_photos');
-                loadPhotos();
-                calculateStorage();
-            }
         }
     </script>
 </body>
