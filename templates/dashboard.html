@@ -1,522 +1,760 @@
-{% extends "base.html" %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Focus Photos - Dashboard & Camera</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+        }
 
-{% block title %}Dashboard - Focus Photos{% endblock %}
+        body {
+            background-color: #0b0b0e;
+            color: #ffffff;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
 
-{% block content %}
-<style>
-    :root {
-        --bg-main: #ffffff;
-        --bg-sidebar: #f8fafc;
-        --bg-card: #ffffff;
-        --border-color: #e2e8f0;
-        --text-primary: #0f172a;
-        --text-secondary: #64748b;
-        --accent-blue: #2563eb;
-        --accent-hover: #1d4ed8;
-    }
+        /* Camera Container */
+        .camera-container {
+            position: relative;
+            width: 100vw;
+            max-width: 480px;
+            height: 100vh;
+            max-height: 900px;
+            background: #000;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            overflow: hidden;
+        }
 
-    [data-theme="dark"] {
-        --bg-main: #000000;
-        --bg-sidebar: #111111;
-        --bg-card: #18181b;
-        --border-color: #27272a;
-        --text-primary: #ffffff;
-        --text-secondary: #a1a1aa;
-        --accent-blue: #3b82f6;
-        --accent-hover: #2563eb;
-    }
+        @media (min-width: 500px) {
+            .camera-container {
+                height: 92vh;
+                border-radius: 24px;
+                box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8);
+            }
+        }
 
-    .app-layout {
-        display: flex;
-        min-height: calc(100vh - 60px);
-        background-color: var(--bg-main);
-        color: var(--text-primary);
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    }
+        /* Top Action Bar */
+        .camera-top-bar {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 14px;
+            background: linear-gradient(180deg, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 100%);
+            z-index: 30;
+        }
 
-    .sidebar {
-        width: 260px;
-        background: var(--bg-sidebar);
-        border-right: 1px solid var(--border-color);
-        padding: 20px 12px;
-        display: flex;
-        flex-direction: column;
-        gap: 6px;
-    }
+        .icon-btn {
+            background: rgba(255, 255, 255, 0.18);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: #fff;
+            padding: 8px 12px;
+            border-radius: 20px;
+            font-size: 0.78rem;
+            font-weight: 500;
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
 
-    .sidebar-section-title {
-        font-size: 0.75rem;
-        font-weight: 700;
-        color: var(--text-secondary);
-        text-transform: uppercase;
-        margin: 18px 0 6px 12px;
-    }
+        .icon-btn.active {
+            background: #ffffff;
+            color: #000000;
+            border-color: #ffffff;
+            font-weight: 600;
+        }
 
-    .nav-item {
-        display: flex;
-        align-items: center;
-        gap: 14px;
-        padding: 10px 16px;
-        border-radius: 20px;
-        color: var(--text-primary);
-        font-size: 0.95rem;
-        cursor: pointer;
-    }
+        /* Viewfinder Wrapper */
+        .viewfinder-wrapper {
+            position: relative;
+            flex: 1;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #121214;
+        }
 
-    .nav-item:hover { background-color: var(--border-color); }
-    .nav-item.active { background-color: var(--accent-blue); color: #ffffff; font-weight: 600; }
+        #camera-video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.1s ease-out;
+        }
 
-    .main-content {
-        flex-grow: 1;
-        padding: 30px 40px;
-        max-width: 1200px;
-    }
+        /* Rule of Thirds Grid */
+        .grid-overlay {
+            position: absolute;
+            inset: 0;
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            grid-template-rows: 1fr 1fr 1fr;
+            pointer-events: none;
+            z-index: 10;
+        }
 
-    .dashboard-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 24px;
-    }
+        .grid-box {
+            border: 1px solid rgba(255, 255, 255, 0.22);
+        }
 
-    .btn-action {
-        padding: 10px 18px;
-        border-radius: 20px;
-        font-weight: 600;
-        border: none;
-        cursor: pointer;
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-    }
+        .grid-overlay.hidden {
+            display: none;
+        }
 
-    .btn-primary { background: var(--accent-blue); color: #ffffff; }
-    .btn-secondary { background: var(--border-color); color: var(--text-primary); }
+        /* Animated Big Countdown Overlay */
+        .countdown-overlay {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 8.5rem;
+            font-weight: 800;
+            color: #ffffff;
+            text-shadow: 0 4px 30px rgba(0,0,0,0.8);
+            z-index: 20;
+            pointer-events: none;
+            animation: popIn 0.8s ease infinite;
+        }
 
-    .back-bar {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        margin-bottom: 20px;
-        cursor: pointer;
-        color: var(--accent-blue);
-        font-weight: 600;
-    }
+        .countdown-overlay.hidden {
+            display: none;
+        }
 
-    .storage-card {
-        background: var(--bg-card);
-        border: 1px solid var(--border-color);
-        border-radius: 14px;
-        padding: 18px 24px;
-        margin-bottom: 30px;
-    }
+        @keyframes popIn {
+            0% { transform: scale(0.4); opacity: 0; }
+            50% { transform: scale(1.15); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+        }
 
-    .progress-bar-bg {
-        width: 100%;
-        height: 8px;
-        background: var(--border-color);
-        border-radius: 10px;
-        overflow: hidden;
-    }
+        /* Zoom & Exposure Sliders Overlay */
+        .slider-controls {
+            position: absolute;
+            bottom: 120px;
+            left: 16px;
+            right: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 25;
+            background: rgba(18, 18, 20, 0.65);
+            padding: 12px 16px;
+            border-radius: 16px;
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
 
-    .progress-bar-fill {
-        width: 0%;
-        height: 100%;
-        background: var(--accent-blue);
-    }
+        .slider-group {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: #e4e4e7;
+            font-size: 0.78rem;
+            font-weight: 500;
+        }
 
-    .tab-view { display: none; }
-    .tab-view.active { display: block; }
+        .slider-group span {
+            width: 65px;
+        }
 
-    .media-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-        gap: 16px;
-    }
+        .slider-group input[type="range"] {
+            flex: 1;
+            accent-color: #007aff;
+            height: 4px;
+            border-radius: 2px;
+            background: rgba(255, 255, 255, 0.2);
+        }
 
-    .media-card {
-        position: relative;
-        aspect-ratio: 1;
-        border-radius: 12px;
-        overflow: hidden;
-        border: 1px solid var(--border-color);
-    }
+        /* Bottom Controls & Filter Carousel */
+        .camera-bottom-bar {
+            background: #000000;
+            padding: 14px 0 24px 0;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            z-index: 30;
+        }
 
-    .media-card img { width: 100%; height: 100%; object-fit: cover; }
+        .filter-carousel {
+            display: flex;
+            gap: 14px;
+            overflow-x: auto;
+            padding: 0 20px;
+            scrollbar-width: none;
+        }
 
-    .empty-state {
-        background: var(--bg-card);
-        border: 1px dashed var(--border-color);
-        border-radius: 16px;
-        padding: 60px 20px;
-        text-align: center;
-        color: var(--text-secondary);
-    }
+        .filter-carousel::-webkit-scrollbar {
+            display: none;
+        }
 
-    /* Camera Overlay View */
-    .camera-modal {
-        position: fixed;
-        inset: 0;
-        background: rgba(0, 0, 0, 0.95);
-        z-index: 999;
-        display: none;
-        align-items: center;
-        justify-content: center;
-    }
+        .filter-option {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            opacity: 0.55;
+            transition: opacity 0.2s ease, transform 0.2s ease;
+            flex-shrink: 0;
+        }
 
-    .camera-modal-content {
-        position: relative;
-        width: 100%;
-        max-width: 440px;
-        height: 820px;
-        background: #000;
-        border-radius: 28px;
-        overflow: hidden;
-        display: flex;
-        flex-direction: column;
-        border: 2px solid #222;
-    }
+        .filter-option.active {
+            opacity: 1;
+            transform: scale(1.06);
+        }
 
-    .camera-top-bar {
-        padding: 14px 16px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        background: #000;
-        z-index: 10;
-    }
+        .filter-thumb {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            border: 2px solid transparent;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+        }
 
-    .cam-btn {
-        background: transparent;
-        color: #ffffff;
-        border: 1px solid #333;
-        border-radius: 20px;
-        padding: 6px 12px;
-        font-size: 0.85rem;
-        cursor: pointer;
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-    }
+        .filter-option.active .filter-thumb {
+            border-color: #007aff;
+            box-shadow: 0 0 0 2px rgba(0, 122, 255, 0.4);
+        }
 
-    .cam-btn.active {
-        background: #facc15;
-        color: #000000;
-        border-color: #facc15;
-        font-weight: 700;
-    }
+        .filter-label {
+            color: #ffffff;
+            font-size: 0.7rem;
+            font-weight: 500;
+        }
 
-    .camera-viewport {
-        position: relative;
-        width: 100%;
-        flex-grow: 1;
-        background: #111;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        overflow: hidden;
-    }
+        /* Shutter Area */
+        .shutter-row {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
 
-    video#cameraFeed {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-    }
+        .shutter-btn {
+            width: 74px;
+            height: 74px;
+            border-radius: 50%;
+            border: 4px solid #ffffff;
+            background: transparent;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: transform 0.1s ease;
+        }
 
-    .exposure-slider-container {
-        position: absolute;
-        bottom: 12px;
-        left: 20px;
-        right: 20px;
-        background: rgba(0,0,0,0.75);
-        padding: 8px 16px;
-        border-radius: 20px;
-        display: none;
-        align-items: center;
-        gap: 10px;
-    }
+        .shutter-inner {
+            width: 58px;
+            height: 58px;
+            border-radius: 50%;
+            background: #ffffff;
+            transition: transform 0.1s ease;
+        }
 
-    .exposure-slider-container input {
-        flex-grow: 1;
-        accent-color: #facc15;
-    }
+        .shutter-btn:active {
+            transform: scale(0.92);
+        }
 
-    .camera-bottom-panel {
-        background: #000000;
-        padding: 20px;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-    }
+        .shutter-btn:active .shutter-inner {
+            transform: scale(0.85);
+        }
 
-    .shutter-btn {
-        width: 68px;
-        height: 68px;
-        border-radius: 50%;
-        border: 4px solid #ffffff;
-        background: transparent;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-    }
+        /* Post-Capture Edit Screen Modal */
+        .edit-modal {
+            position: fixed;
+            inset: 0;
+            background: #000000;
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 16px;
+        }
 
-    .shutter-inner {
-        width: 52px;
-        height: 52px;
-        border-radius: 50%;
-        background: #ffffff;
-    }
-</style>
+        .edit-modal.hidden {
+            display: none;
+        }
 
-{% set active_username = username or (current_user.username if current_user is defined and current_user.username else session.get('username', session.get('user', 'User'))) %}
+        .edit-preview-container {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            padding: 10px 0;
+        }
 
-<div class="app-layout" id="appLayout">
-    <!-- Sidebar -->
-    <div class="sidebar">
-        <div class="nav-item active" id="navPhotos" onclick="showTab('photosTab', this)">
-            <i class="fa-regular fa-image"></i>
-            <span>Photos</span>
-        </div>
-        <div class="nav-item" id="navUpdates" onclick="showTab('updatesTab', this)">
-            <i class="fa-regular fa-bell"></i>
-            <span>Updates</span>
-        </div>
-        <div class="sidebar-section-title">Collections</div>
-        <div class="nav-item" id="navAlbums" onclick="showTab('albumsTab', this)">
-            <i class="fa-regular fa-folder"></i>
-            <span>Albums</span>
-        </div>
-        <div class="nav-item" id="navDocuments" onclick="showTab('documentsTab', this)">
-            <i class="fa-regular fa-file-lines"></i>
-            <span>Documents</span>
-        </div>
-        <div class="nav-item" id="navScreenshots" onclick="showTab('screenshotsTab', this)">
-            <i class="fa-solid fa-mobile-screen"></i>
-            <span>Screenshots</span>
-        </div>
-        <div class="nav-item" id="navFavorites" onclick="showTab('favoritesTab', this)">
-            <i class="fa-regular fa-star"></i>
-            <span>Favorites</span>
-        </div>
-        <div class="sidebar-section-title">Account</div>
-        <div class="nav-item" id="navProfile" onclick="showTab('profileTab', this)">
-            <i class="fa-regular fa-user"></i>
-            <span>User Profile</span>
-        </div>
-    </div>
+        #edit-canvas {
+            max-width: 100%;
+            max-height: 100%;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
+        }
 
-    <!-- Main Content -->
-    <div class="main-content">
-        <div class="dashboard-header">
-            <h1 id="welcomeHeading">Welcome, {{ active_username }} 👋</h1>
-            <div>
-                <input type="file" id="fileUploadInput" accept="image/*" style="display: none;" onchange="handleFileUpload(event)">
-                <button type="button" class="btn-action btn-secondary" onclick="document.getElementById('fileUploadInput').click()">Upload</button>
-                <button type="button" class="btn-action btn-primary" onclick="openCameraModal()">Camera</button>
-            </div>
-        </div>
+        .edit-controls {
+            background: #18181b;
+            padding: 16px;
+            border-radius: 18px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
 
-        <div class="storage-card">
-            <div>Storage Used: <strong id="usedStorageText">0.00 MB</strong> / 20 GB</div>
-            <div class="progress-bar-bg" style="margin-top:8px;">
-                <div class="progress-bar-fill" id="storageProgressBar"></div>
-            </div>
-        </div>
+        .edit-actions {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+        }
 
-        <div id="photosTab" class="tab-view active">
-            <div id="photosGrid" class="media-grid"></div>
-            <div id="photosEmpty" class="empty-state">
-                <h3>No photos saved yet</h3>
-                <p>Use "Camera" or "Upload" to get started.</p>
-            </div>
-        </div>
+        .btn-secondary {
+            flex: 1;
+            background: #27272a;
+            color: #ffffff;
+            border: none;
+            padding: 14px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
 
-        <div id="profileTab" class="tab-view">
-            <div class="back-bar" onclick="returnToDashboardHome()"><i class="fa-solid fa-arrow-left"></i> Back to Dashboard</div>
-            <div class="empty-state">
-                <h2>User Profile</h2>
-                <p><strong>Username:</strong> {{ active_username }}</p>
-                <p><strong>Account Status:</strong> Active</p>
-            </div>
-        </div>
+        .btn-secondary:active {
+            background: #3f3f46;
+        }
 
-        <div id="updatesTab" class="tab-view">
-            <div class="back-bar" onclick="returnToDashboardHome()"><i class="fa-solid fa-arrow-left"></i> Back to Dashboard</div>
-            <div class="empty-state"><h3>No updates</h3></div>
-        </div>
-        <div id="albumsTab" class="tab-view">
-            <div class="back-bar" onclick="returnToDashboardHome()"><i class="fa-solid fa-arrow-left"></i> Back to Dashboard</div>
-            <div class="empty-state"><h3>No albums</h3></div>
-        </div>
-        <div id="documentsTab" class="tab-view">
-            <div class="back-bar" onclick="returnToDashboardHome()"><i class="fa-solid fa-arrow-left"></i> Back to Dashboard</div>
-            <div class="empty-state"><h3>No documents</h3></div>
-        </div>
-        <div id="screenshotsTab" class="tab-view">
-            <div class="back-bar" onclick="returnToDashboardHome()"><i class="fa-solid fa-arrow-left"></i> Back to Dashboard</div>
-            <div class="empty-state"><h3>No screenshots</h3></div>
-        </div>
-        <div id="favoritesTab" class="tab-view">
-            <div class="back-bar" onclick="returnToDashboardHome()"><i class="fa-solid fa-arrow-left"></i> Back to Dashboard</div>
-            <div class="empty-state"><h3>No favorites</h3></div>
-        </div>
-    </div>
-</div>
+        .btn-primary {
+            flex: 1;
+            background: #007aff;
+            color: #ffffff;
+            border: none;
+            padding: 14px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
 
-<!-- Dedicated Camera Screen Overlay -->
-<div class="camera-modal" id="cameraModal">
-    <div class="camera-modal-content">
-        <!-- Top Toolbar with Features and Guaranteed Back Button -->
+        .btn-primary:active {
+            background: #0056b3;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Camera Container -->
+    <div class="camera-container">
+        <!-- Top Action Bar -->
         <div class="camera-top-bar">
-            <button type="button" class="cam-btn" style="font-weight: bold; background: #333;" onclick="closeCameraModal()">
-                <i class="fa-solid fa-chevron-left"></i> Back
-            </button>
-            <button type="button" class="cam-btn" id="btnFlash" onclick="toggleFlash()"><i class="fa-solid fa-bolt"></i> Flash</button>
-            <button type="button" class="cam-btn" id="btnTimer" onclick="toggleTimer()"><i class="fa-solid fa-stopwatch"></i> <span id="timerLabel">Off</span></button>
-            <button type="button" class="cam-btn" id="btnNight" onclick="toggleNightMode()"><i class="fa-solid fa-moon"></i> Night</button>
-            <button type="button" class="cam-btn" onclick="toggleExposure()"><i class="fa-solid fa-sun"></i> EV</button>
+            <button id="btn-back" class="icon-btn">← Back</button>
+            <button id="btn-flash" class="icon-btn">⚡ Flash</button>
+            <button id="btn-night" class="icon-btn">🌙 Night</button>
+            <button id="btn-grid" class="icon-btn">🌐 Grid</button>
+            <button id="btn-timer" class="icon-btn">⏱️ Off</button>
+            <button id="btn-flip" class="icon-btn">🔄 Flip</button>
         </div>
 
-        <!-- Viewfinder Canvas -->
-        <div class="camera-viewport">
-            <video id="cameraFeed" autoplay playsinline muted></video>
-            <div class="exposure-slider-container" id="exposureContainer">
-                <i class="fa-solid fa-sun" style="color:#facc15;"></i>
-                <input type="range" id="expRange" min="50" max="150" value="100" oninput="setExposure(this.value)">
+        <!-- Live Viewfinder -->
+        <div class="viewfinder-wrapper">
+            <video id="camera-video" autoplay playsinline muted></video>
+
+            <!-- Rule of Thirds Grid -->
+            <div id="grid-overlay" class="grid-overlay hidden">
+                <div class="grid-box"></div><div class="grid-box"></div><div class="grid-box"></div>
+                <div class="grid-box"></div><div class="grid-box"></div><div class="grid-box"></div>
+                <div class="grid-box"></div><div class="grid-box"></div><div class="grid-box"></div>
+            </div>
+
+            <!-- Big Visual Countdown Overlay -->
+            <div id="countdown-overlay" class="countdown-overlay hidden">3</div>
+
+            <!-- Zoom & Exposure Sliders Overlay -->
+            <div class="slider-controls">
+                <div class="slider-group">
+                    <span>🔍 Zoom</span>
+                    <input type="range" id="slider-zoom" min="1" max="4" step="0.1" value="1">
+                </div>
+                <div class="slider-group">
+                    <span>☀️ EV</span>
+                    <input type="range" id="slider-ev" min="-2" max="2" step="0.5" value="0">
+                </div>
             </div>
         </div>
 
-        <!-- Bottom Shutter & Controls -->
-        <div class="camera-bottom-panel">
-            <div style="width: 44px;"></div>
-            <div class="shutter-btn" onclick="takePicture()"><div class="shutter-inner"></div></div>
-            <button type="button" class="cam-btn" onclick="flipCamera()"><i class="fa-solid fa-arrows-rotate"></i> Flip</button>
+        <!-- Bottom Controls & Filter Carousel -->
+        <div class="camera-bottom-bar">
+            <!-- Live Filter Carousel -->
+            <div class="filter-carousel" id="filter-carousel">
+                <div class="filter-option active" data-filter="normal">
+                    <div class="filter-thumb" style="background: #444;"></div>
+                    <span class="filter-label">Normal</span>
+                </div>
+                <div class="filter-option" data-filter="vivid">
+                    <div class="filter-thumb" style="background: linear-gradient(45deg, #ff0055, #ffaa00);"></div>
+                    <span class="filter-label">Vivid</span>
+                </div>
+                <div class="filter-option" data-filter="bw">
+                    <div class="filter-thumb" style="background: linear-gradient(45deg, #000, #fff);"></div>
+                    <span class="filter-label">B&W</span>
+                </div>
+                <div class="filter-option" data-filter="sepia">
+                    <div class="filter-thumb" style="background: #704214;"></div>
+                    <span class="filter-label">Sepia</span>
+                </div>
+                <div class="filter-option" data-filter="warm">
+                    <div class="filter-thumb" style="background: #ffaa55;"></div>
+                    <span class="filter-label">Warm</span>
+                </div>
+                <div class="filter-option" data-filter="cool">
+                    <div class="filter-thumb" style="background: #55aaff;"></div>
+                    <span class="filter-label">Cool</span>
+                </div>
+                <div class="filter-option" data-filter="fade">
+                    <div class="filter-thumb" style="background: #888888;"></div>
+                    <span class="filter-label">Fade</span>
+                </div>
+                <div class="filter-option" data-filter="dramatic">
+                    <div class="filter-thumb" style="background: linear-gradient(45deg, #111, #444);"></div>
+                    <span class="filter-label">Dramatic</span>
+                </div>
+            </div>
+
+            <!-- Shutter Button -->
+            <div class="shutter-row">
+                <button id="btn-shutter" class="shutter-btn" aria-label="Take Photo">
+                    <div class="shutter-inner"></div>
+                </button>
+            </div>
         </div>
     </div>
-</div>
 
-<script>
-    let mediaState = [];
-    let currentStream = null;
-    let facingMode = 'user';
-    let flashOn = false;
-    let timerVal = 0;
-    let nightModeVal = false;
+    <!-- Hidden Canvas for Screen Snapshot -->
+    <canvas id="snapshot-canvas" style="display: none;"></canvas>
 
-    // View Navigation
-    function showTab(tabId, el) {
-        document.querySelectorAll('.tab-view').forEach(v => v.classList.remove('active'));
-        document.querySelectorAll('.sidebar .nav-item').forEach(i => i.classList.remove('active'));
-        document.getElementById(tabId).classList.add('active');
-        if (el) el.classList.add('active');
-    }
+    <!-- Post-Capture Edit Screen Modal -->
+    <div id="edit-modal" class="edit-modal hidden">
+        <div class="edit-preview-container">
+            <canvas id="edit-canvas"></canvas>
+        </div>
 
-    function returnToDashboardHome() {
-        showTab('photosTab', document.getElementById('navPhotos'));
-    }
+        <div class="edit-controls">
+            <div class="slider-group">
+                <span>Brightness</span>
+                <input type="range" id="edit-brightness" min="50" max="150" value="100">
+            </div>
+            <div class="slider-group">
+                <span>Contrast</span>
+                <input type="range" id="edit-contrast" min="50" max="150" value="100">
+            </div>
+            <div class="slider-group">
+                <span>Saturation</span>
+                <input type="range" id="edit-saturation" min="0" max="200" value="100">
+            </div>
+            <button id="btn-rotate" class="icon-btn" style="width: 100%; justify-content: center; padding: 10px; margin-top: 4px;">🔄 Rotate 90°</button>
+        </div>
 
-    // Explicit Close Camera Function
-    function closeCameraModal() {
-        const modal = document.getElementById('cameraModal');
-        modal.style.display = 'none';
-        if (currentStream) {
-            currentStream.getTracks().forEach(track => track.stop());
-            currentStream = null;
+        <div class="edit-actions">
+            <button id="btn-retake" class="btn-secondary">Retake</button>
+            <button id="btn-save" class="btn-primary">Save Photo</button>
+        </div>
+    </div>
+
+    <!-- JavaScript Engine -->
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const video = document.getElementById('camera-video');
+        const gridOverlay = document.getElementById('grid-overlay');
+        const countdownOverlay = document.getElementById('countdown-overlay');
+        const snapshotCanvas = document.getElementById('snapshot-canvas');
+        const editModal = document.getElementById('edit-modal');
+        const editCanvas = document.getElementById('edit-canvas');
+
+        const state = {
+            stream: null,
+            facingMode: 'environment',
+            selectedFilter: 'normal',
+            ev: 0,
+            zoom: 1,
+            isNight: false,
+            flash: false,
+            timerSec: 0,
+            grid: false,
+            capturedImage: null,
+            editBrightness: 100,
+            editContrast: 100,
+            editSaturation: 100,
+            editRotation: 0
+        };
+
+        const filterPresets = {
+            normal: '',
+            vivid: 'saturate(1.8) contrast(1.1)',
+            bw: 'grayscale(1)',
+            sepia: 'sepia(0.9)',
+            warm: 'sepia(0.35) saturate(1.3)',
+            cool: 'hue-rotate(170deg) saturate(1.1)',
+            fade: 'contrast(0.85) brightness(1.1) saturate(0.8)',
+            dramatic: 'contrast(1.5) saturate(1.2) brightness(0.9)'
+        };
+
+        async function startCamera() {
+            if (state.stream) {
+                state.stream.getTracks().forEach(track => track.stop());
+            }
+
+            try {
+                const constraints = {
+                    video: {
+                        facingMode: state.facingMode,
+                        width: { ideal: 1920 },
+                        height: { ideal: 1080 }
+                    },
+                    audio: false
+                };
+
+                state.stream = await navigator.mediaDevices.getUserMedia(constraints);
+                video.srcObject = state.stream;
+                await video.play();
+                updateEngineViewfinder();
+            } catch (err) {
+                console.error('Camera initialization error:', err);
+                alert('Unable to access camera. Please make sure camera permissions are enabled.');
+            }
         }
-    }
 
-    async function openCameraModal() {
-        document.getElementById('cameraModal').style.display = 'flex';
-        try {
-            if (currentStream) currentStream.getTracks().forEach(t => t.stop());
-            currentStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: facingMode } });
-            document.getElementById('cameraFeed').srcObject = currentStream;
-        } catch (err) {
-            alert("Could not access camera device.");
+        function updateEngineViewfinder() {
+            let cssFilters = [];
+
+            if (filterPresets[state.selectedFilter]) {
+                cssFilters.push(filterPresets[state.selectedFilter]);
+            }
+
+            const evBrightness = 100 + (state.ev * 20);
+            cssFilters.push(`brightness(${evBrightness}%)`);
+
+            if (state.isNight) {
+                cssFilters.push('brightness(130%) contrast(110%) saturate(120%)');
+            }
+
+            video.style.filter = cssFilters.join(' ');
+
+            const mirrorScale = state.facingMode === 'user' ? -1 : 1;
+            video.style.transform = `scale(${state.zoom}) scaleX(${mirrorScale})`;
         }
-    }
 
-    // Camera Features
-    function toggleFlash() {
-        flashOn = !flashOn;
-        document.getElementById('btnFlash').classList.toggle('active', flashOn);
-    }
-
-    function toggleTimer() {
-        timerVal = timerVal === 0 ? 3 : (timerVal === 3 ? 10 : 0);
-        document.getElementById('timerLabel').innerText = timerVal === 0 ? 'Off' : `${timerVal}s`;
-        document.getElementById('btnTimer').classList.toggle('active', timerVal > 0);
-    }
-
-    function toggleNightMode() {
-        nightModeVal = !nightModeVal;
-        document.getElementById('btnNight').classList.toggle('active', nightModeVal);
-        document.getElementById('cameraFeed').style.filter = nightModeVal ? 'brightness(170%) contrast(120%)' : 'none';
-    }
-
-    function toggleExposure() {
-        const box = document.getElementById('exposureContainer');
-        box.style.display = box.style.display === 'flex' ? 'none' : 'flex';
-    }
-
-    function setExposure(val) {
-        document.getElementById('cameraFeed').style.filter = `brightness(${val}%)`;
-    }
-
-    function flipCamera() {
-        facingMode = facingMode === 'user' ? 'environment' : 'user';
-        openCameraModal();
-    }
-
-    function takePicture() {
-        if (timerVal > 0) {
-            setTimeout(captureNow, timerVal * 1000);
-        } else {
-            captureNow();
-        }
-    }
-
-    function captureNow() {
-        const video = document.getElementById('cameraFeed');
-        const canvas = document.createElement('canvas');
-        canvas.width = video.videoWidth || 640;
-        canvas.height = video.videoHeight || 480;
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(video, 0, 0);
-
-        mediaState.push({
-            id: Date.now(),
-            src: canvas.toDataURL('image/png')
+        document.querySelectorAll('.filter-option').forEach(option => {
+            option.addEventListener('click', () => {
+                document.querySelectorAll('.filter-option').forEach(o => o.classList.remove('active'));
+                option.classList.add('active');
+                state.selectedFilter = option.dataset.filter;
+                updateEngineViewfinder();
+            });
         });
 
-        closeCameraModal();
-        renderPhotos();
-    }
+        document.getElementById('slider-zoom').addEventListener('input', (e) => {
+            state.zoom = parseFloat(e.target.value);
+            updateEngineViewfinder();
+        });
 
-    function handleFileUpload(e) {
-        const file = e.target.files[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = function(evt) {
-            mediaState.push({ id: Date.now(), src: evt.target.result });
-            renderPhotos();
-        };
-        reader.readAsDataURL(file);
-    }
+        document.getElementById('slider-ev').addEventListener('input', (e) => {
+            state.ev = parseFloat(e.target.value);
+            updateEngineViewfinder();
+        });
 
-    function renderPhotos() {
-        const container = document.getElementById('photosGrid');
-        const empty = document.getElementById('photosEmpty');
-        if (!mediaState.length) {
-            container.innerHTML = '';
-            empty.style.display = 'block';
-            return;
+        document.getElementById('btn-flash').addEventListener('click', function() {
+            state.flash = !state.flash;
+            this.classList.toggle('active', state.flash);
+            this.innerText = state.flash ? '⚡ Flash On' : '⚡ Flash';
+        });
+
+        document.getElementById('btn-night').addEventListener('click', function() {
+            state.isNight = !state.isNight;
+            this.classList.toggle('active', state.isNight);
+            this.innerText = state.isNight ? '🌙 Night On' : '🌙 Night';
+            updateEngineViewfinder();
+        });
+
+        document.getElementById('btn-grid').addEventListener('click', function() {
+            state.grid = !state.grid;
+            this.classList.toggle('active', state.grid);
+            gridOverlay.classList.toggle('hidden', !state.grid);
+        });
+
+        document.getElementById('btn-timer').addEventListener('click', function() {
+            if (state.timerSec === 0) state.timerSec = 3;
+            else if (state.timerSec === 3) state.timerSec = 10;
+            else state.timerSec = 0;
+            
+            this.classList.toggle('active', state.timerSec > 0);
+            this.innerText = state.timerSec === 0 ? '⏱️ Off' : `⏱️ ${state.timerSec}s`;
+        });
+
+        document.getElementById('btn-flip').addEventListener('click', () => {
+            state.facingMode = state.facingMode === 'user' ? 'environment' : 'user';
+            startCamera();
+        });
+
+        document.getElementById('btn-back').addEventListener('click', () => {
+            if (state.stream) {
+                state.stream.getTracks().forEach(track => track.stop());
+            }
+            window.location.href = '/';
+        });
+
+        document.getElementById('btn-shutter').addEventListener('click', () => {
+            if (state.timerSec > 0) {
+                runCountdown(state.timerSec, takeSnapshot);
+            } else {
+                takeSnapshot();
+            }
+        });
+
+        function runCountdown(seconds, callback) {
+            let count = seconds;
+            countdownOverlay.innerText = count;
+            countdownOverlay.classList.remove('hidden');
+
+            const interval = setInterval(() => {
+                count--;
+                if (count > 0) {
+                    countdownOverlay.innerText = count;
+                } else {
+                    clearInterval(interval);
+                    countdownOverlay.classList.add('hidden');
+                    callback();
+                }
+            }, 1000);
         }
-        empty.style.display = 'none';
-        container.innerHTML = mediaState.map(m => `
-            <div class="media-card"><img src="${m.src}"></div>
-        `).join('');
-    }
-</script>
-{% endblock %}
+
+        function takeSnapshot() {
+            if (state.flash) {
+                const flashOverlay = document.createElement('div');
+                flashOverlay.style.cssText = 'position:fixed;inset:0;background:#ffffff;z-index:999;';
+                document.body.appendChild(flashOverlay);
+                setTimeout(() => flashOverlay.remove(), 150);
+            }
+
+            const ctx = snapshotCanvas.getContext('2d');
+            snapshotCanvas.width = video.videoWidth || 1280;
+            snapshotCanvas.height = video.videoHeight || 720;
+
+            ctx.filter = video.style.filter;
+
+            ctx.save();
+            if (state.facingMode === 'user') {
+                ctx.translate(snapshotCanvas.width, 0);
+                ctx.scale(-1, 1);
+            }
+
+            ctx.drawImage(video, 0, 0, snapshotCanvas.width, snapshotCanvas.height);
+            ctx.restore();
+
+            const img = new Image();
+            img.onload = () => {
+                state.capturedImage = img;
+                resetEditControls();
+                openEditModal();
+            };
+            img.src = snapshotCanvas.toDataURL('image/jpeg');
+        }
+
+        function openEditModal() {
+            editModal.classList.remove('hidden');
+            renderEditCanvas();
+        }
+
+        function resetEditControls() {
+            state.editBrightness = 100;
+            state.editContrast = 100;
+            state.editSaturation = 100;
+            state.editRotation = 0;
+            document.getElementById('edit-brightness').value = 100;
+            document.getElementById('edit-contrast').value = 100;
+            document.getElementById('edit-saturation').value = 100;
+        }
+
+        function renderEditCanvas() {
+            if (!state.capturedImage) return;
+
+            const ctx = editCanvas.getContext('2d');
+            const img = state.capturedImage;
+
+            const isVertical = state.editRotation % 180 !== 0;
+            editCanvas.width = isVertical ? img.height : img.width;
+            editCanvas.height = isVertical ? img.width : img.height;
+
+            ctx.save();
+            ctx.clearRect(0, 0, editCanvas.width, editCanvas.height);
+
+            ctx.filter = `brightness(${state.editBrightness}%) contrast(${state.editContrast}%) saturate(${state.editSaturation}%)`;
+
+            ctx.translate(editCanvas.width / 2, editCanvas.height / 2);
+            ctx.rotate((state.editRotation * Math.PI) / 180);
+            ctx.drawImage(img, -img.width / 2, -img.height / 2);
+
+            ctx.restore();
+        }
+
+        document.getElementById('edit-brightness').addEventListener('input', (e) => {
+            state.editBrightness = e.target.value;
+            renderEditCanvas();
+        });
+
+        document.getElementById('edit-contrast').addEventListener('input', (e) => {
+            state.editContrast = e.target.value;
+            renderEditCanvas();
+        });
+
+        document.getElementById('edit-saturation').addEventListener('input', (e) => {
+            state.editSaturation = e.target.value;
+            renderEditCanvas();
+        });
+
+        document.getElementById('btn-rotate').addEventListener('click', () => {
+            state.editRotation = (state.editRotation + 90) % 360;
+            renderEditCanvas();
+        });
+
+        document.getElementById('btn-retake').addEventListener('click', () => {
+            editModal.classList.add('hidden');
+        });
+
+        document.getElementById('btn-save').addEventListener('click', () => {
+            const finalDataURL = editCanvas.toDataURL('image/jpeg', 0.92);
+            
+            const link = document.createElement('a');
+            link.download = `FocusPhoto_${Date.now()}.jpg`;
+            link.href = finalDataURL;
+            link.click();
+
+            editModal.classList.add('hidden');
+        });
+
+        startCamera();
+    });
+    </script>
+</body>
+</html>
