@@ -37,7 +37,7 @@
             overflow: hidden;
         }
 
-        /* Screen Flash Effect */
+        /* Screen Flash Overlay */
         .screen-flash-overlay {
             position: absolute;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -120,7 +120,7 @@
             accent-color: #1a73e8;
         }
 
-        /* 3x3 Grid Overlay */
+        /* Grid Overlay */
         .grid-overlay {
             position: absolute;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -134,7 +134,7 @@
         .grid-overlay div { border: 0.5px solid rgba(255, 255, 255, 0.25); }
         .grid-overlay.hidden { display: none; }
 
-        /* Bottom Control Panel */
+        /* Bottom Controls */
         .camera-bottom-bar {
             background: #000000;
             padding: 16px 0 28px 0;
@@ -168,7 +168,7 @@
             background: #ffffff;
         }
 
-        /* Modal Dialog for Save Options */
+        /* Save Option Dialog Modal */
         .save-modal {
             position: fixed;
             top: 0; left: 0; width: 100vw; height: 100vh;
@@ -286,10 +286,10 @@
         let currentStream = null;
         let videoTrack = null;
         let currentFacingMode = 'environment';
-        let flashMode = false; // false = OFF, true = ON
+        let flashMode = false;
         let currentCapturedBlob = null;
 
-        // 1. Initialize Camera
+        // Start Camera Stream
         async function startCamera() {
             if (currentStream) {
                 currentStream.getTracks().forEach(track => track.stop());
@@ -303,7 +303,6 @@
                 video.srcObject = currentStream;
                 videoTrack = currentStream.getVideoTracks()[0];
 
-                // Configure Hardware Zoom if supported by browser/camera
                 const capabilities = videoTrack.getCapabilities ? videoTrack.getCapabilities() : {};
                 if (capabilities.zoom) {
                     zoomSlider.min = capabilities.zoom.min;
@@ -316,44 +315,40 @@
             }
         }
 
-        // 2. Zoom Handler (Hardware + Software Fallback)
+        // Zoom Slider Handler
         zoomSlider.addEventListener('input', (e) => {
             const zoomLevel = e.target.value;
             zoomValue.innerText = `${parseFloat(zoomLevel).toFixed(1)}x`;
 
             const capabilities = videoTrack ? (videoTrack.getCapabilities ? videoTrack.getCapabilities() : {}) : {};
             if (capabilities.zoom) {
-                // Hardware Zoom
                 videoTrack.applyConstraints({ advanced: [{ zoom: zoomLevel }] });
             } else {
-                // Software Fallback Zoom
                 video.style.transform = `scale(${zoomLevel})`;
             }
         });
 
-        // 3. Flash Toggle
+        // Flash Light Toggle
         btnFlash.addEventListener('click', () => {
             flashMode = !flashMode;
             btnFlash.innerText = flashMode ? '⚡ Flash: ON' : '⚡ Flash: OFF';
             btnFlash.classList.toggle('active', flashMode);
 
-            // Attempt hardware torch activation if supported
             const capabilities = videoTrack ? (videoTrack.getCapabilities ? videoTrack.getCapabilities() : {}) : {};
             if (capabilities.torch) {
                 videoTrack.applyConstraints({ advanced: [{ torch: flashMode }] });
             }
         });
 
-        // 4. Flip Camera
+        // Flip Camera Toggle
         btnFlip.addEventListener('click', () => {
             currentFacingMode = (currentFacingMode === 'user') ? 'environment' : 'user';
             startCamera();
         });
 
-        // 5. Capture Photo & Handle Flash Effect
+        // Capture Shutter Click
         btnMainShutter.addEventListener('click', () => {
             if (flashMode) {
-                // Flash screen effect
                 flashOverlay.style.opacity = '1';
                 setTimeout(() => {
                     flashOverlay.style.opacity = '0';
@@ -385,7 +380,7 @@
             }, 'image/jpeg', 0.95);
         }
 
-        // 6. Save Option 1: Save inside App Photos (LocalStorage / App DB)
+        // Option 1: Save to App LocalStorage
         document.getElementById('btn-save-app').addEventListener('click', () => {
             const reader = new FileReader();
             reader.readAsDataURL(currentCapturedBlob);
@@ -403,7 +398,7 @@
             };
         });
 
-        // 7. Save Option 2: Download to Phone / Device Photos
+        // Option 2: Download directly to user device
         document.getElementById('btn-save-device').addEventListener('click', () => {
             const a = document.createElement('a');
             a.href = previewImg.src;
@@ -414,7 +409,7 @@
             saveModal.classList.add('hidden');
         });
 
-        // 8. Discard
+        // Discard
         document.getElementById('btn-retake').addEventListener('click', () => {
             saveModal.classList.add('hidden');
         });
