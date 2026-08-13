@@ -4,6 +4,12 @@ import random
 app = Flask(__name__)
 app.secret_key = 'your_super_secret_key_here'
 
+# 1. FIX: Root URL redirects to OTP verification instead of showing a 404 error
+@app.route('/')
+def home():
+    return redirect(url_for('verify_otp'))
+
+# 2. OTP Verification Route
 @app.route('/verify-otp', methods=['GET', 'POST'])
 def verify_otp():
     if request.method == 'POST':
@@ -16,29 +22,30 @@ def verify_otp():
         else:
             flash("Invalid verification code. Please try again.", "error")
             
-    # Retrieve user email/phone from session or defaults
     email = session.get('user_email', 'qphocus@gmail.com')
     phone = session.get('user_phone', '0548327035')
     
-    # Generate OTP if not present
     if 'otp' not in session:
         session['otp'] = random.randint(100000, 999999)
         
     otp = session.get('otp')
 
-    # SECURE LOGGING: Printed only in VS Code terminal for developer testing
     print(f"\n==============================")
-    print(f"[DEV DEBUG] Generated OTP for {email}: {otp}")
+    print(f"[DEV DEBUG] OTP Code for {email}: {otp}")
     print(f"==============================\n")
 
-    # Clean display message sent to front-end UI (No code leak)
     message = f"Verification code sent to {email} / {phone}."
-
     return render_template('verify_otp.html', message=message)
 
+# 3. FIX: Dashboard Route now renders a complete dashboard UI
 @app.route('/dashboard')
 def dashboard():
-    return "Welcome to your Focus Photos Dashboard!"
+    return render_template('dashboard.html')
+
+# 4. Camera Route: Opens the Samsung Web Camera interface
+@app.route('/camera')
+def camera():
+    return render_template('camera.html')
 
 if __name__ == '__main__':
     app.run(debug=True)
