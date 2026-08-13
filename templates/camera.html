@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Focus Photos - Camera</title>
+    <title>Focus Photos - Samsung Style Camera</title>
     <style>
         * {
             box-sizing: border-box;
@@ -14,10 +14,10 @@
         }
 
         body {
-            background-color: #0b0b0e;
+            background-color: #000000;
             color: #ffffff;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            min-height: 100vh;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -27,9 +27,9 @@
         .camera-container {
             position: relative;
             width: 100vw;
-            max-width: 480px;
+            max-width: 500px;
             height: 100vh;
-            max-height: 900px;
+            max-height: 920px;
             background: #000;
             display: flex;
             flex-direction: column;
@@ -37,6 +37,7 @@
             overflow: hidden;
         }
 
+        /* Top Bar Controls */
         .camera-top-bar {
             position: absolute;
             top: 0;
@@ -45,32 +46,34 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 16px 14px;
+            padding: 16px 16px;
             background: linear-gradient(180deg, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 100%);
             z-index: 30;
         }
 
         .icon-btn {
-            background: rgba(255, 255, 255, 0.18);
-            border: 1px solid rgba(255, 255, 255, 0.15);
+            background: rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.2);
             color: #fff;
             padding: 8px 12px;
             border-radius: 20px;
-            font-size: 0.78rem;
+            font-size: 0.8rem;
             font-weight: 500;
             backdrop-filter: blur(12px);
             cursor: pointer;
             display: flex;
             align-items: center;
             gap: 4px;
+            transition: all 0.2s ease;
         }
 
         .icon-btn.active {
             background: #ffffff;
             color: #000000;
-            font-weight: 600;
+            font-weight: 700;
         }
 
+        /* Viewfinder Area */
         .viewfinder-wrapper {
             position: relative;
             flex: 1;
@@ -78,102 +81,141 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            background: #121214;
+            background: #000;
         }
 
         #camera-video {
             width: 100%;
             height: 100%;
             object-fit: cover;
+            transition: filter 0.2s ease, transform 0.1s ease;
         }
 
-        /* Two-Line Sliders Popup Container (Hidden by default) */
-        .slider-controls-popup {
+        /* 3x3 Grid Overlay */
+        .grid-overlay {
             position: absolute;
-            bottom: 20px;
-            left: 16px;
-            right: 16px;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            z-index: 25;
-            background: rgba(0, 0, 0, 0.75);
-            padding: 14px 18px;
-            border-radius: 16px;
-            backdrop-filter: blur(16px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            transition: opacity 0.2s, transform 0.2s;
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none;
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            grid-template-rows: 1fr 1fr 1fr;
+            z-index: 15;
         }
 
-        .slider-controls-popup.hidden {
-            display: none;
+        .grid-overlay div {
+            border: 0.5px solid rgba(255, 255, 255, 0.25);
         }
 
-        .slider-group {
+        .grid-overlay.hidden { display: none; }
+
+        /* Shot Suggestions Target Ring */
+        .shot-suggestion-target {
+            position: absolute;
+            width: 60px; height: 60px;
+            border: 2px dashed #fbbc04;
+            border-radius: 50%;
+            top: 45%; left: 42%;
             display: flex;
             align-items: center;
-            gap: 12px;
-            color: #ffffff;
-            font-size: 0.8rem;
+            justify-content: center;
+            pointer-events: none;
+            z-index: 18;
+            transition: all 0.3s ease;
+        }
+
+        .shot-suggestion-target.aligned {
+            border: 3px solid #34a853;
+            background: rgba(52, 168, 83, 0.2);
+        }
+
+        .shot-suggestion-target.hidden { display: none; }
+
+        /* Tracking Auto Focus Box */
+        .af-tracking-box {
+            position: absolute;
+            width: 70px; height: 70px;
+            border: 2px solid #4285f4;
+            border-radius: 8px;
+            pointer-events: none;
+            z-index: 19;
+            transform: translate(-50%, -50%);
+            transition: top 0.1s ease, left 0.1s ease;
+        }
+
+        .af-tracking-box.hidden { display: none; }
+
+        /* Scene Optimizer Badge */
+        .scene-badge {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0,0,0,0.65);
+            border: 1px solid rgba(255,255,255,0.3);
+            border-radius: 20px;
+            padding: 6px 14px;
+            font-size: 0.75rem;
+            color: #fff;
+            backdrop-filter: blur(10px);
+            z-index: 20;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .scene-badge.hidden { display: none; }
+
+        /* QR Code Overlay Toast */
+        .qr-toast {
+            position: absolute;
+            top: 70px;
+            background: #1a73e8;
+            color: #fff;
+            padding: 10px 18px;
+            border-radius: 24px;
+            font-size: 0.85rem;
             font-weight: 600;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            z-index: 25;
+            cursor: pointer;
         }
 
-        .slider-group span {
-            width: 60px;
+        .qr-toast.hidden { display: none; }
+
+        /* Floating Shutter Button */
+        .floating-shutter {
+            position: absolute;
+            width: 56px; height: 56px;
+            border-radius: 50%;
+            background: #ffffff;
+            border: 3px solid rgba(0,0,0,0.3);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+            z-index: 25;
+            cursor: grab;
+            top: 70%; left: 75%;
+            touch-action: none;
         }
 
-        .slider-group input[type="range"] {
-            flex: 1;
-            accent-color: #007aff;
-            height: 4px;
-        }
+        .floating-shutter.hidden { display: none; }
 
+        /* Bottom Control Panel */
         .camera-bottom-bar {
             background: #000000;
-            padding: 14px 0 24px 0;
+            padding: 16px 0 28px 0;
             display: flex;
             flex-direction: column;
             gap: 16px;
             z-index: 30;
         }
 
-        .filter-carousel {
-            display: flex;
-            gap: 14px;
-            overflow-x: auto;
-            padding: 0 20px;
-            scrollbar-width: none;
-        }
-
-        .filter-option {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 6px;
-            cursor: pointer;
-            opacity: 0.55;
-            flex-shrink: 0;
-        }
-
-        .filter-option.active {
-            opacity: 1;
-        }
-
-        .filter-thumb {
-            width: 48px;
-            height: 48px;
-            border-radius: 50%;
-        }
-
         .shutter-row {
             display: flex;
-            justify-content: center;
+            justify-content: space-around;
             align-items: center;
+            padding: 0 20px;
         }
 
-        .shutter-btn {
-            width: 74px;
-            height: 74px;
+        .main-shutter-btn {
+            width: 76px; height: 76px;
             border-radius: 50%;
             border: 4px solid #ffffff;
             background: transparent;
@@ -183,78 +225,577 @@
             cursor: pointer;
         }
 
-        .shutter-inner {
-            width: 58px;
-            height: 58px;
+        .main-shutter-inner {
+            width: 60px; height: 60px;
             border-radius: 50%;
             background: #ffffff;
         }
+
+        /* Samsung-Style Settings Overlay Menu */
+        .settings-menu {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: #000000;
+            z-index: 50;
+            overflow-y: auto;
+            padding: 20px 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .settings-menu.hidden { display: none; }
+
+        .settings-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #222;
+        }
+
+        .settings-header h2 { font-size: 1.2rem; font-weight: 600; }
+
+        .setting-category {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .category-title {
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: #1a73e8;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .setting-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 14px;
+            background: #121212;
+            border-radius: 12px;
+        }
+
+        .setting-label {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .setting-name { font-size: 0.92rem; font-weight: 500; }
+        .setting-desc { font-size: 0.75rem; color: #888; }
+
+        /* Toggle Switches */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 46px;
+            height: 26px;
+        }
+
+        .switch input { opacity: 0; width: 0; height: 0; }
+
+        .slider-switch {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #333;
+            transition: .3s;
+            border-radius: 26px;
+        }
+
+        .slider-switch:before {
+            position: absolute;
+            content: "";
+            height: 20px; width: 20px;
+            left: 3px; bottom: 3px;
+            background-color: white;
+            transition: .3s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider-switch { background-color: #1a73e8; }
+        input:checked + .slider-switch:before { transform: translateX(20px); }
+
+        select.setting-select {
+            background: #222;
+            color: #fff;
+            border: 1px solid #444;
+            padding: 6px 10px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+        }
+
+        /* Photo Preview Modal */
+        .preview-modal {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: #000;
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            padding: 20px;
+        }
+
+        .preview-modal.hidden { display: none; }
+
+        .preview-img {
+            max-width: 100%;
+            max-height: 75vh;
+            border-radius: 12px;
+            object-fit: contain;
+        }
+
+        .preview-actions {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .btn-action {
+            padding: 12px 24px;
+            border-radius: 24px;
+            border: none;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .btn-retake { background: #333; color: #fff; }
+        .btn-save { background: #1a73e8; color: #fff; }
     </style>
 </head>
 <body>
 
     <div class="camera-container">
-        <!-- Top Bar with Two-Line Toggle Button -->
+        <!-- Top Bar -->
         <div class="camera-top-bar">
             <button class="icon-btn" onclick="window.location.href='/dashboard'">← Dashboard</button>
-            <button id="btn-toggle-sliders" class="icon-btn">🎛️ Sliders</button>
-            <button id="btn-flash" class="icon-btn">⚡ Flash</button>
-            <button id="btn-grid" class="icon-btn">🌐 Grid</button>
+            <button id="btn-flash" class="icon-btn">⚡ Flash: OFF</button>
             <button id="btn-flip" class="icon-btn">🔄 Flip</button>
+            <button id="btn-settings-open" class="icon-btn">⚙️ Settings</button>
         </div>
 
-        <!-- Live Viewfinder -->
-        <div class="viewfinder-wrapper">
+        <!-- Viewfinder -->
+        <div class="viewfinder-wrapper" id="viewfinder">
             <video id="camera-video" autoplay playsinline muted></video>
 
-            <!-- Sliders popup (Now hidden until 🎛️ Sliders button is clicked) -->
-            <div id="slider-popup" class="slider-controls-popup hidden">
-                <div class="slider-group">
-                    <span>🔵 Zoom</span>
-                    <input type="range" id="slider-zoom" min="1" max="4" step="0.1" value="1">
-                </div>
-                <div class="slider-group">
-                    <span>☀️ EV</span>
-                    <input type="range" id="slider-ev" min="-2" max="2" step="0.5" value="0">
-                </div>
+            <!-- Grid Overlay -->
+            <div id="grid-overlay" class="grid-overlay hidden">
+                <div></div><div></div><div></div>
+                <div></div><div></div><div></div>
+                <div></div><div></div><div></div>
             </div>
+
+            <!-- Shot Suggestions Guide -->
+            <div id="shot-suggestion" class="shot-suggestion-target hidden">
+                <span style="font-size: 0.65rem; color: #fff;">BEST SHOT</span>
+            </div>
+
+            <!-- Tracking Auto Focus Target -->
+            <div id="af-box" class="af-tracking-box hidden"></div>
+
+            <!-- Scene Optimizer Badge -->
+            <div id="scene-badge" class="scene-badge hidden">
+                <span>✨</span> <span id="scene-text">Optimizing...</span>
+            </div>
+
+            <!-- QR Code Toast -->
+            <div id="qr-toast" class="qr-toast hidden" onclick="openQRLink()">
+                🔗 QR Detected: <span id="qr-link">https://example.com</span>
+            </div>
+
+            <!-- Floating Shutter Button -->
+            <div id="floating-shutter" class="floating-shutter hidden"></div>
         </div>
 
         <!-- Bottom Controls -->
         <div class="camera-bottom-bar">
-            <div class="filter-carousel">
-                <div class="filter-option active"><div class="filter-thumb" style="background:#444;"></div><span style="font-size:0.7rem;">Normal</span></div>
-                <div class="filter-option"><div class="filter-thumb" style="background:linear-gradient(45deg, #ff0055, #ffaa00);"></div><span style="font-size:0.7rem;">Vivid</span></div>
-                <div class="filter-option"><div class="filter-thumb" style="background:#000;"></div><span style="font-size:0.7rem;">B&W</span></div>
+            <div class="shutter-row">
+                <button class="icon-btn" id="btn-quick-gallery" onclick="window.location.href='/dashboard'">🖼️ Gallery</button>
+                <button id="btn-main-shutter" class="main-shutter-btn"><div class="main-shutter-inner"></div></button>
+                <button class="icon-btn" id="btn-voice-indicator">🎙️ Voice: ON</button>
+            </div>
+        </div>
+
+        <!-- Samsung Camera Settings Overlay -->
+        <div id="settings-menu" class="settings-menu hidden">
+            <div class="settings-header">
+                <h2>Camera Settings</h2>
+                <button class="icon-btn" id="btn-settings-close">Done</button>
             </div>
 
-            <div class="shutter-row">
-                <button class="shutter-btn"><div class="shutter-inner"></div></button>
+            <!-- Category 1: Intelligent Features -->
+            <div class="setting-category">
+                <div class="category-title">Intelligent Features</div>
+                <div class="setting-item">
+                    <div class="setting-label">
+                        <span class="setting-name">Scene Optimizer</span>
+                        <span class="setting-desc">Adjust colors & brightness automatically</span>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="set-scene-optimizer" checked>
+                        <span class="slider-switch"></span>
+                    </label>
+                </div>
+
+                <div class="setting-item">
+                    <div class="setting-label">
+                        <span class="setting-name">Shot Suggestions</span>
+                        <span class="setting-desc">On-screen guide for framed shots</span>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="set-shot-suggestions" checked>
+                        <span class="slider-switch"></span>
+                    </label>
+                </div>
+
+                <div class="setting-item">
+                    <div class="setting-label">
+                        <span class="setting-name">Scan QR Codes</span>
+                        <span class="setting-desc">Automatically read QR codes in viewfinder</span>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="set-scan-qr" checked>
+                        <span class="slider-switch"></span>
+                    </label>
+                </div>
             </div>
+
+            <!-- Category 2: Pictures & Processing -->
+            <div class="setting-category">
+                <div class="category-title">Pictures & Processing</div>
+                <div class="setting-item">
+                    <div class="setting-label">
+                        <span class="setting-name">Intelligent Optimization</span>
+                        <span class="setting-desc">Quality vs Processing Speed</span>
+                    </div>
+                    <select id="set-intelligent-opt" class="setting-select">
+                        <option value="max">Maximum</option>
+                        <option value="med">Medium</option>
+                        <option value="min">Minimum</option>
+                    </select>
+                </div>
+
+                <div class="setting-item">
+                    <div class="setting-label">
+                        <span class="setting-name">Auto HDR</span>
+                        <span class="setting-desc">Balance dynamic range in highlights/shadows</span>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="set-auto-hdr" checked>
+                        <span class="slider-switch"></span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Category 3: Alignment & Composition -->
+            <div class="setting-category">
+                <div class="category-title">Alignment & Composition</div>
+                <div class="setting-item">
+                    <div class="setting-label">
+                        <span class="setting-name">Grid Lines</span>
+                        <span class="setting-desc">3x3 composition overlay</span>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="set-grid-lines">
+                        <span class="slider-switch"></span>
+                    </label>
+                </div>
+
+                <div class="setting-item">
+                    <div class="setting-label">
+                        <span class="setting-name">Location Tags</span>
+                        <span class="setting-desc">Attach GPS tags to pictures</span>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="set-location-tags">
+                        <span class="slider-switch"></span>
+                    </label>
+                </div>
+
+                <div class="setting-item">
+                    <div class="setting-label">
+                        <span class="setting-name">Watermark</span>
+                        <span class="setting-desc">Add date, time, and device stamp</span>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="set-watermark" checked>
+                        <span class="slider-switch"></span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Category 4: Shooting Methods -->
+            <div class="setting-category">
+                <div class="category-title">Shooting Methods</div>
+                <div class="setting-item">
+                    <div class="setting-label">
+                        <span class="setting-name">Voice Commands</span>
+                        <span class="setting-desc">Say "Smile", "Cheese", or "Shoot"</span>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="set-voice-commands" checked>
+                        <span class="slider-switch"></span>
+                    </label>
+                </div>
+
+                <div class="setting-item">
+                    <div class="setting-label">
+                        <span class="setting-name">Floating Shutter Button</span>
+                        <span class="setting-desc">Moveable extra shutter button</span>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="set-floating-shutter">
+                        <span class="slider-switch"></span>
+                    </label>
+                </div>
+
+                <div class="setting-item">
+                    <div class="setting-label">
+                        <span class="setting-name">Tracking Auto Focus</span>
+                        <span class="setting-desc">Lock focus onto tap targets</span>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="set-tracking-af" checked>
+                        <span class="slider-switch"></span>
+                    </label>
+                </div>
+
+                <div class="setting-item">
+                    <div class="setting-label">
+                        <span class="setting-name">Settings to Keep</span>
+                        <span class="setting-desc">Save last mode and flash choices</span>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="set-keep-settings" checked>
+                        <span class="slider-switch"></span>
+                    </label>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Capture Preview Modal -->
+    <div id="preview-modal" class="preview-modal hidden">
+        <h3 style="color:#fff;">Photo Captured</h3>
+        <img id="preview-img" class="preview-img" src="" alt="Captured Photo">
+        <div class="preview-actions">
+            <button id="btn-retake" class="btn-action btn-retake">Retake</button>
+            <a id="btn-download" download="samsung-focus-photo.jpg" class="btn-action btn-save" style="text-decoration:none;">Download</a>
         </div>
     </div>
 
     <script>
     document.addEventListener('DOMContentLoaded', () => {
         const video = document.getElementById('camera-video');
-        const sliderPopup = document.getElementById('slider-popup');
-        const toggleSlidersBtn = document.getElementById('btn-toggle-sliders');
+        const viewfinder = document.getElementById('viewfinder');
+        
+        // Dynamic UI elements
+        const gridOverlay = document.getElementById('grid-overlay');
+        const shotSuggestion = document.getElementById('shot-suggestion');
+        const sceneBadge = document.getElementById('scene-badge');
+        const sceneText = document.getElementById('scene-text');
+        const afBox = document.getElementById('af-box');
+        const qrToast = document.getElementById('qr-toast');
+        const qrLink = document.getElementById('qr-link');
+        const floatingShutter = document.getElementById('floating-shutter');
+        const voiceIndicator = document.getElementById('btn-voice-indicator');
+        
+        // Buttons
+        const btnFlip = document.getElementById('btn-flip');
+        const btnFlash = document.getElementById('btn-flash');
+        const btnMainShutter = document.getElementById('btn-main-shutter');
+        const btnSettingsOpen = document.getElementById('btn-settings-open');
+        const btnSettingsClose = document.getElementById('btn-settings-close');
+        const settingsMenu = document.getElementById('settings-menu');
+        
+        // Settings Toggles
+        const setSceneOptimizer = document.getElementById('set-scene-optimizer');
+        const setShotSuggestions = document.getElementById('set-shot-suggestions');
+        const setScanQR = document.getElementById('set-scan-qr');
+        const setAutoHDR = document.getElementById('set-auto-hdr');
+        const setGridLines = document.getElementById('set-grid-lines');
+        const setLocationTags = document.getElementById('set-location-tags');
+        const setWatermark = document.getElementById('set-watermark');
+        const setVoiceCommands = document.getElementById('set-voice-commands');
+        const setFloatingShutter = document.getElementById('set-floating-shutter');
+        const setTrackingAF = document.getElementById('set-tracking-af');
 
-        // Toggle two-line sliders on/off when clicked
-        toggleSlidersBtn.addEventListener('click', () => {
-            sliderPopup.classList.toggle('hidden');
-            toggleSlidersBtn.classList.toggle('active');
-        });
+        // State
+        let currentFacingMode = 'user';
+        let currentStream = null;
+        let isFlashOn = false;
+        let userCoords = null;
 
+        // 1. Initialize Camera Stream
         async function startCamera() {
+            if (currentStream) {
+                currentStream.getTracks().forEach(track => track.stop());
+            }
+
             try {
-                const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
-                video.srcObject = stream;
+                currentStream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: currentFacingMode },
+                    audio: false
+                });
+                video.srcObject = currentStream;
             } catch (err) {
-                console.error(err);
+                alert("Camera error: " + err.message);
             }
         }
+
+        // 2. Settings Menu Open/Close
+        btnSettingsOpen.addEventListener('click', () => settingsMenu.classList.remove('hidden'));
+        btnSettingsClose.addEventListener('click', () => settingsMenu.classList.add('hidden'));
+
+        // 3. Flip Camera
+        btnFlip.addEventListener('click', () => {
+            currentFacingMode = (currentFacingMode === 'user') ? 'environment' : 'user';
+            startCamera();
+        });
+
+        // 4. Flash Toggle
+        btnFlash.addEventListener('click', () => {
+            isFlashOn = !isFlashOn;
+            btnFlash.innerText = isFlashOn ? '⚡ Flash: ON' : '⚡ Flash: OFF';
+            btnFlash.classList.toggle('active', isFlashOn);
+        });
+
+        // 5. Grid Lines Setting
+        setGridLines.addEventListener('change', () => {
+            gridOverlay.classList.toggle('hidden', !setGridLines.checked);
+        });
+
+        // 6. Shot Suggestions
+        setShotSuggestions.addEventListener('change', () => {
+            shotSuggestion.classList.toggle('hidden', !setShotSuggestions.checked);
+        });
+
+        // 7. Floating Shutter Button Toggle & Dragging
+        setFloatingShutter.addEventListener('change', () => {
+            floatingShutter.classList.toggle('hidden', !setFloatingShutter.checked);
+        });
+
+        let isDragging = false;
+        floatingShutter.addEventListener('pointerdown', () => isDragging = true);
+        window.addEventListener('pointermove', (e) => {
+            if (!isDragging) return;
+            floatingShutter.style.left = `${e.clientX - 28}px`;
+            floatingShutter.style.top = `${e.clientY - 28}px`;
+        });
+        window.addEventListener('pointerup', () => isDragging = false);
+
+        // 8. Tracking Auto Focus on Viewfinder Tap
+        viewfinder.addEventListener('click', (e) => {
+            if (!setTrackingAF.checked) return;
+            const rect = viewfinder.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            afBox.style.left = `${x}px`;
+            afBox.style.top = `${y}px`;
+            afBox.classList.remove('hidden');
+
+            setTimeout(() => afBox.classList.add('hidden'), 2500);
+        });
+
+        // 9. Scene Optimizer Simulation
+        function runSceneOptimizer() {
+            if (!setSceneOptimizer.checked) {
+                sceneBadge.classList.add('hidden');
+                return;
+            }
+            sceneBadge.classList.remove('hidden');
+            const scenes = ["Sunset", "Landscape", "Portrait", "Food", "Text/Document"];
+            const randomScene = scenes[Math.floor(Math.random() * scenes.length)];
+            sceneText.innerText = `${randomScene} Mode`;
+        }
+
+        setInterval(runSceneOptimizer, 4000);
+
+        // 10. Voice Commands (Web Speech API Integration)
+        if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            const recognition = new SpeechRecognition();
+            recognition.continuous = true;
+            recognition.lang = 'en-US';
+
+            recognition.onresult = (event) => {
+                const transcript = event.results[event.results.length - 1][0].transcript.toLowerCase();
+                if (setVoiceCommands.checked && (transcript.includes('smile') || transcript.includes('cheese') || transcript.includes('shoot'))) {
+                    capturePhoto();
+                }
+            };
+
+            setVoiceCommands.addEventListener('change', () => {
+                if (setVoiceCommands.checked) recognition.start();
+                else recognition.stop();
+                voiceIndicator.style.display = setVoiceCommands.checked ? 'flex' : 'none';
+            });
+
+            try { recognition.start(); } catch(e){}
+        }
+
+        // 11. Location Tags (GPS Metadata setup)
+        setLocationTags.addEventListener('change', () => {
+            if (setLocationTags.checked && navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(pos => {
+                    userCoords = `${pos.coords.latitude.toFixed(2)}°N, ${pos.coords.longitude.toFixed(2)}°E`;
+                });
+            } else {
+                userCoords = null;
+            }
+        });
+
+        // 12. Main Photo Capture with Watermark & Processing
+        function capturePhoto() {
+            const canvas = document.createElement('canvas');
+            canvas.width = video.videoWidth || 640;
+            canvas.height = video.videoHeight || 480;
+            const ctx = canvas.getContext('2d');
+
+            if (currentFacingMode === 'user') {
+                ctx.translate(canvas.width, 0);
+                ctx.scale(-1, 1);
+            }
+
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            // Apply Watermark if enabled
+            if (setWatermark.checked) {
+                ctx.setTransform(1, 0, 0, 1, 0, 0); // reset scale
+                ctx.font = '18px sans-serif';
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+                ctx.shadowColor = 'black';
+                ctx.shadowBlur = 4;
+                const now = new Date().toLocaleString();
+                const text = `Focus Photos | ${now} ${userCoords ? '| ' + userCoords : ''}`;
+                ctx.fillText(text, 20, canvas.height - 20);
+            }
+
+            const dataUrl = canvas.toDataURL('image/jpeg');
+            document.getElementById('preview-img').src = dataUrl;
+            document.getElementById('btn-download').href = dataUrl;
+            document.getElementById('preview-modal').classList.remove('hidden');
+        }
+
+        btnMainShutter.addEventListener('click', capturePhoto);
+        floatingShutter.addEventListener('click', capturePhoto);
+
+        document.getElementById('btn-retake').addEventListener('click', () => {
+            document.getElementById('preview-modal').classList.add('hidden');
+        });
+
+        // Start initial camera
         startCamera();
+        if (setGridLines.checked) gridOverlay.classList.remove('hidden');
+        if (setShotSuggestions.checked) shotSuggestion.classList.remove('hidden');
     });
     </script>
 </body>
