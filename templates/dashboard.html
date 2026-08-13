@@ -3,398 +3,153 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Focus Photos - Google Photos Style</title>
+    <title>Focus Photos - Dashboard</title>
     <style>
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
         }
 
         body {
-            background-color: #f8f9fa;
-            color: #1f1f1f;
-            display: flex;
-            height: 100vh;
-            overflow: hidden;
-        }
-
-        /* Sidebar Navigation (Google Photos Style) */
-        .sidebar {
-            width: 250px;
-            background: #ffffff;
-            border-right: 1px solid #e0e0e0;
+            background-color: #0c0d12;
+            color: #ffffff;
+            min-height: 100vh;
             display: flex;
             flex-direction: column;
-            justify-content: space-between;
-            padding: 16px 12px;
-            flex-shrink: 0;
-        }
-
-        .brand-header {
-            display: flex;
             align-items: center;
-            gap: 12px;
-            padding: 8px 12px 20px 12px;
-            font-size: 1.25rem;
-            font-weight: 600;
-            color: #1f1f1f;
+            padding: 40px 20px;
         }
 
-        /* Brand Logo Image */
-        .brand-logo-img {
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            object-fit: cover;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
-        }
-
-        .nav-section-title {
-            font-size: 0.8rem;
-            font-weight: 600;
-            color: #5f6368;
-            padding: 16px 12px 8px 12px;
-        }
-
-        .nav-list {
-            list-style: none;
-            display: flex;
-            flex-direction: column;
-            gap: 2px;
-        }
-
-        .nav-item {
-            display: flex;
-            align-items: center;
-            gap: 14px;
-            padding: 10px 14px;
-            border-radius: 20px;
-            color: #3c4043;
-            font-size: 0.92rem;
-            font-weight: 500;
-            cursor: pointer;
-            transition: background 0.15s ease;
-            text-decoration: none;
-        }
-
-        .nav-item:hover {
-            background-color: #f1f3f4;
-        }
-
-        .nav-item.active {
-            background-color: #c2e7ff;
-            color: #001d35;
-            font-weight: 600;
-        }
-
-        /* Dynamic 20GB Free Storage Box */
-        .storage-box {
-            background: #f8f9fa;
-            border: 1px solid #e0e0e0;
-            border-radius: 16px;
-            padding: 14px;
-            margin-top: auto;
-        }
-
-        .storage-header {
-            display: flex;
-            justify-content: space-between;
-            font-size: 0.8rem;
-            font-weight: 600;
-            color: #3c4043;
-            margin-bottom: 8px;
-        }
-
-        .storage-bar-bg {
-            height: 6px;
-            background: #e0e0e0;
-            border-radius: 3px;
-            overflow: hidden;
-            margin-bottom: 8px;
-        }
-
-        .storage-bar-fill {
-            height: 100%;
-            background: #1a73e8;
-            width: 0%;
-            border-radius: 3px;
-            transition: width 0.3s ease;
-        }
-
-        .storage-subtext {
-            font-size: 0.72rem;
-            color: #1e8e3e;
-            font-weight: 600;
-        }
-
-        /* Main Content Viewport */
-        .main-viewport {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            overflow-y: auto;
-            background: #ffffff;
-        }
-
-        .top-bar {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 14px 28px;
-            border-bottom: 1px solid #f1f3f4;
-            position: sticky;
-            top: 0;
-            background: #ffffff;
-            z-index: 10;
-        }
-
-        .search-container {
-            position: relative;
-            width: 50%;
-            max-width: 600px;
-        }
-
-        .search-input {
+        .dashboard-container {
             width: 100%;
-            padding: 11px 16px 11px 44px;
-            border-radius: 24px;
-            border: none;
-            background-color: #f1f3f4;
-            font-size: 0.95rem;
-            outline: none;
-        }
-
-        .search-input:focus {
-            background-color: #ffffff;
-            box-shadow: 0 1px 6px rgba(32,33,36,0.28);
-        }
-
-        .search-icon {
-            position: absolute;
-            left: 16px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: #5f6368;
-        }
-
-        .user-profile-widget {
-            display: flex;
-            align-items: center;
-            gap: 14px;
-        }
-
-        .camera-launch-btn {
-            background-color: #1a73e8;
-            color: #ffffff;
-            padding: 9px 18px;
+            max-width: 600px;
+            background: #12141c;
             border-radius: 20px;
-            text-decoration: none;
-            font-size: 0.88rem;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .welcome-text {
-            font-size: 0.9rem;
-            font-weight: 600;
-            color: #3c4043;
-        }
-
-        /* Profile Avatar Image */
-        .user-avatar {
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            object-fit: cover;
-            border: 2px solid #e0e0e0;
-            cursor: pointer;
-        }
-
-        .content-container {
-            padding: 32px;
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .view-title {
-            font-size: 1.4rem;
-            font-weight: 600;
-            color: #1f1f1f;
-            margin-bottom: 20px;
-        }
-
-        /* Empty State */
-        .empty-state-container {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
+            padding: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 12px 32px rgba(0,0,0,0.6);
             text-align: center;
-            color: #5f6368;
-            gap: 12px;
-            margin-top: 40px;
         }
 
-        .empty-icon {
-            width: 90px;
-            height: 90px;
-            border-radius: 50%;
-            object-fit: cover;
+        h1 {
+            font-size: 1.8rem;
             margin-bottom: 8px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            color: #00d2ff;
         }
 
-        .empty-title {
-            font-size: 1.2rem;
-            font-weight: 600;
-            color: #202124;
+        p.subtitle {
+            color: #a0a5b5;
+            font-size: 0.95rem;
+            margin-bottom: 28px;
         }
 
-        .empty-subtext {
-            font-size: 0.9rem;
-            color: #70757a;
-            max-width: 320px;
-            line-height: 1.4;
+        .action-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 30px;
         }
 
-        .cta-btn {
-            margin-top: 12px;
-            background-color: #1a73e8;
-            color: #ffffff;
-            border: none;
-            padding: 10px 24px;
-            border-radius: 20px;
-            font-weight: 600;
-            font-size: 0.9rem;
-            cursor: pointer;
+        .action-card {
+            background: #181b26;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 16px;
             text-decoration: none;
+            color: white;
+            transition: transform 0.2s, border-color 0.2s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .action-card:hover {
+            transform: translateY(-3px);
+            border-color: #00d2ff;
+        }
+
+        .action-card .icon {
+            font-size: 2rem;
+        }
+
+        .action-card span {
+            font-size: 0.95rem;
+            font-weight: 600;
+        }
+
+        .app-gallery-title {
+            text-align: left;
+            font-size: 1.1rem;
+            margin-bottom: 16px;
+            border-bottom: 1px solid #222;
+            padding-bottom: 8px;
+        }
+
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 10px;
+            min-height: 120px;
+        }
+
+        .gallery-img {
+            width: 100%;
+            height: 100px;
+            object-fit: cover;
+            border-radius: 8px;
+            border: 1px solid #333;
+        }
+
+        .empty-msg {
+            grid-column: 1 / -1;
+            color: #666;
+            font-size: 0.85rem;
+            padding: 30px 0;
         }
     </style>
 </head>
 <body>
 
-    <!-- Left Sidebar -->
-    <aside class="sidebar">
-        <div>
-            <div class="brand-header">
-                <!-- Custom Focus Photos Logo Image -->
-                <img src="https://media.istockphoto.com/id/1179640294/photo/magnifying-glass-in-hand-focuses-on-autumn-yellow-foliage.jpg?s=612x612&w=0&k=20&c=1A1sQ4gPByc4OefC4wE5hL0E8pD1iE7dM1-G-vXg2R0=" class="brand-logo-img" alt="Focus Logo">
-                <span>Focus Photos</span>
-            </div>
+    <div class="dashboard-container">
+        <h1>Focus Photos Dashboard</h1>
+        <p class="subtitle">Welcome to your app! Choose an action below:</p>
 
-            <ul class="nav-list">
-                <li class="nav-item active" onclick="switchTab('Photos', this)">
-                    <span>🖼️</span> <span>Photos</span>
-                </li>
-                <li class="nav-item" onclick="switchTab('Updates', this)">
-                    <span>🔔</span> <span>Updates</span>
-                </li>
-            </ul>
-
-            <div class="nav-section-title">Collections</div>
-            <ul class="nav-list">
-                <li class="nav-item" onclick="switchTab('Albums', this)">
-                    <span>📁</span> <span>Albums</span>
-                </li>
-                <li class="nav-item" onclick="switchTab('Documents', this)">
-                    <span>📄</span> <span>Documents</span>
-                </li>
-                <li class="nav-item" onclick="switchTab('Screenshots', this)">
-                    <span>📱</span> <span>Screenshots & recordings</span>
-                </li>
-                <li class="nav-item" onclick="switchTab('Favorites', this)">
-                    <span>⭐</span> <span>Favorites</span>
-                </li>
-                <li class="nav-item" onclick="switchTab('People', this)">
-                    <span>👤</span> <span>People</span>
-                </li>
-                <li class="nav-item" onclick="switchTab('Places', this)">
-                    <span>📍</span> <span>Places</span>
-                </li>
-                <li class="nav-item" onclick="switchTab('Videos', this)">
-                    <span>🎥</span> <span>Videos</span>
-                </li>
-            </ul>
+        <div class="action-grid">
+            <a href="/camera" class="action-card">
+                <span class="icon">📷</span>
+                <span>Open Camera</span>
+            </a>
+            <a href="/verify-otp" class="action-card">
+                <span class="icon">🔐</span>
+                <span>Re-verify OTP</span>
+            </a>
         </div>
 
-        <!-- 20GB Storage Bar -->
-        <div class="storage-box">
-            <div class="storage-header">
-                <span>Storage</span>
-                <span id="storage-used-text">0.0 GB of 20 GB</span>
-            </div>
-            <div class="storage-bar-bg">
-                <div class="storage-bar-fill" id="storage-bar" style="width: 0%;"></div>
-            </div>
-            <div class="storage-subtext">Free 20 GB Storage Ready</div>
+        <h2 class="app-gallery-title">Saved App Photos</h2>
+        <div id="gallery-container" class="gallery-grid">
+            <p class="empty-msg">No saved photos yet. Tap "Open Camera" to take one!</p>
         </div>
-    </aside>
-
-    <!-- Main Viewport -->
-    <main class="main-viewport">
-        <!-- Top Navigation Bar -->
-        <div class="top-bar">
-            <div class="search-container">
-                <span class="search-icon">🔍</span>
-                <input type="text" class="search-input" placeholder="Search your photos, places or things...">
-            </div>
-
-            <div class="user-profile-widget">
-                <a href="/camera" class="camera-launch-btn">📷 Camera</a>
-                <span class="welcome-text">Welcome, <strong id="username-display">User</strong></span>
-                <!-- Custom Profile Image -->
-                <img src="https://media.istockphoto.com/id/1179640294/photo/magnifying-glass-in-hand-focuses-on-autumn-yellow-foliage.jpg?s=612x612&w=0&k=20&c=1A1sQ4gPByc4OefC4wE5hL0E8pD1iE7dM1-G-vXg2R0=" class="user-avatar" alt="Profile">
-            </div>
-        </div>
-
-        <!-- Dynamic Content Area -->
-        <div class="content-container">
-            <h1 class="view-title" id="view-title">Photos</h1>
-            
-            <div id="content-area">
-                <div class="empty-state-container">
-                    <img src="https://media.istockphoto.com/id/1179640294/photo/magnifying-glass-in-hand-focuses-on-autumn-yellow-foliage.jpg?s=612x612&w=0&k=20&c=1A1sQ4gPByc4OefC4wE5hL0E8pD1iE7dM1-G-vXg2R0=" class="empty-icon" alt="Focus">
-                    <div class="empty-title">No photos here yet</div>
-                    <div class="empty-subtext">Your gallery is currently empty. Open the camera to capture your first photo!</div>
-                    <a href="/camera" class="cta-btn">Open Camera</a>
-                </div>
-            </div>
-        </div>
-    </main>
+    </div>
 
     <script>
-        document.getElementById('username-display').innerText = "Michael";
+        // Load photos saved locally in the browser
+        document.addEventListener('DOMContentLoaded', () => {
+            const galleryContainer = document.getElementById('gallery-container');
+            const appPhotos = JSON.parse(localStorage.getItem('app_photos') || '[]');
 
-        function switchTab(tabName, element) {
-            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
-            element.classList.add('active');
-            document.getElementById('view-title').innerText = tabName;
-            
-            const contentArea = document.getElementById('content-area');
-            contentArea.innerHTML = `
-                <div class="empty-state-container">
-                    <img src="https://media.istockphoto.com/id/1179640294/photo/magnifying-glass-in-hand-focuses-on-autumn-yellow-foliage.jpg?s=612x612&w=0&k=20&c=1A1sQ4gPByc4OefC4wE5hL0E8pD1iE7dM1-G-vXg2R0=" class="empty-icon" alt="Focus">
-                    <div class="empty-title">No ${tabName} found</div>
-                    <div class="empty-subtext">There are no items saved under ${tabName} yet.</div>
-                    <a href="/camera" class="cta-btn">Take a Photo</a>
-                </div>
-            `;
-        }
-
-        function updateStorage(usedGB) {
-            const totalGB = 20;
-            const percentage = (usedGB / totalGB) * 100;
-            document.getElementById('storage-used-text').innerText = `${usedGB.toFixed(1)} GB of ${totalGB} GB`;
-            document.getElementById('storage-bar').style.width = `${percentage}%`;
-        }
-
-        updateStorage(0.0);
+            if (appPhotos.length > 0) {
+                galleryContainer.innerHTML = '';
+                appPhotos.reverse().forEach(photo => {
+                    const img = document.createElement('img');
+                    img.src = photo.data;
+                    img.className = 'gallery-img';
+                    galleryContainer.appendChild(img);
+                });
+            }
+        });
     </script>
 </body>
 </html>
