@@ -4,52 +4,77 @@ import socket
 from flask import Flask, render_template, request, redirect, url_for, flash, session
 from flask_mail import Mail, Message
 
-# 5-second socket timeout to keep Gunicorn fast and responsive
 socket.setdefaulttimeout(5.0)
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'your_super_secret_key_here')
 
 # -------------------------------------------------------------
-# GMAIL SMTP CONFIGURATION
+# GMAIL CONFIGURATION
 # -------------------------------------------------------------
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 587
 app.config['MAIL_USE_TLS'] = True
 app.config['MAIL_USERNAME'] = 'qphocus@gmail.com'
-# Your Google App Password added here:
 app.config['MAIL_PASSWORD'] = 'njlljroqlixueyci'
 app.config['MAIL_DEFAULT_SENDER'] = ('Focus Photos', 'qphocus@gmail.com')
 
 mail = Mail(app)
 
+# In-memory user database simulation
+users_db = {}
+
 # -------------------------------------------------------------
-# 1. HOMEPAGE / VERIFICATION ROUTE
+# 1. AUTHENTICATION ROUTE (Sign In / Sign Up)
 # -------------------------------------------------------------
 @app.route('/', methods=['GET', 'POST'])
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        action = request.form.get('action')
+        email = request.form.get('email', '').strip()
+        password = request.form.get('password', '').strip()
+
+        if action == 'signup':
+            if len(password) < 6:
+                flash("Password must be at least 6 characters long.", "error")
+                return render_template('login.html')
+
+            users_db[email] = password
+            session['user_email'] = email
+            return send_and_redirect_otp(email)
+
+        elif action == 'signin':
+            session['user_email'] = email
+            return send_and_redirect_otp(email)
+
+    return render_template('login.html')
+
+def send_and_redirect_otp(email):
+    otp = random.randint(100000, 999999)
+    session['otp'] = otp
+
+    # Send OTP via Email
+    try:
+        msg = Message(
+            subject="Your Focus Photos Verification Code 🔑",
+            recipients=[email]
+        )
+        msg.body = f"Hello,\n\nYour Focus Photos verification code is: {otp}\n\nPlease enter this code to complete your login."
+        mail.send(msg)
+        print(f"[SUCCESS] Email sent to {email}")
+    except Exception as e:
+        print(f"[EMAIL NOTICE] Could not send live email: {e}")
+
+    return redirect(url_for('verify_otp'))
+
+# -------------------------------------------------------------
+# 2. VERIFICATION ROUTE
+# -------------------------------------------------------------
+@app.route('/verify-otp', methods=['GET', 'POST'])
 def verify_otp():
-    # Generate OTP on first visit or session reset
-    if 'otp' not in session:
-        session['otp'] = random.randint(100000, 999999)
-    
-    otp = session['otp']
-    recipient_email = session.get('user_email', 'qphocus@gmail.com')
+    email = session.get('user_email', 'qphocus@gmail.com')
 
-    # Automatically send the email when the page loads
-    if request.method == 'GET' and 'email_attempted' not in session:
-        session['email_attempted'] = True
-        try:
-            msg = Message(
-                subject="Your Focus Photos Verification Code 🔑",
-                recipients=[recipient_email]
-            )
-            msg.body = f"Hello,\n\nYour Focus Photos verification code is: {otp}\n\nPlease enter this code to access your account."
-            mail.send(msg)
-            print(f"[SUCCESS] Live verification email sent to {recipient_email}")
-        except Exception as e:
-            print(f"[EMAIL ERROR] Could not send email via SMTP: {e}")
-
-    # Handle OTP Submission
     if request.method == 'POST':
         user_otp = request.form.get('otp', '').strip()
         session_otp = str(session.get('otp', ''))
@@ -60,37 +85,28 @@ def verify_otp():
         else:
             flash("Invalid verification code. Please try again.", "error")
 
-    recipient_email = session.get('user_email', 'qphocus@gmail.com')
-    recipient_phone = session.get('user_phone', '0548327035')
-    message = f"Verification code sent to {recipient_email} / {recipient_phone}."
-
+    message = f"Verification code sent to {email}."
     return render_template('verify_otp.html', message=message)
 
 # -------------------------------------------------------------
-# 2. PROTECTED DASHBOARD
+# 3. PROTECTED ROUTES
 # -------------------------------------------------------------
 @app.route('/dashboard')
 def dashboard():
     if not session.get('logged_in'):
-        return redirect(url_for('verify_otp'))
+        return redirect(url_for('login'))
     return render_template('dashboard.html')
 
-# -------------------------------------------------------------
-# 3. PROTECTED CAMERA
-# -------------------------------------------------------------
 @app.route('/camera')
 def camera():
     if not session.get('logged_in'):
-        return redirect(url_for('verify_otp'))
+        return redirect(url_for('login'))
     return render_template('camera.html')
 
-# -------------------------------------------------------------
-# 4. LOGOUT ROUTE
-# -------------------------------------------------------------
 @app.route('/logout')
 def logout():
     session.clear()
-    return redirect(url_for('verify_otp'))
+    return redirect(url_for('login'))
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 10000))
