@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Focus Photos - Google Photos</title>
+    <title>Focus Photos - Gallery</title>
     <style>
         * {
             box-sizing: border-box;
@@ -16,8 +16,8 @@
             --google-blue: #0b57d0;
             --google-blue-hover: #1a73e8;
             --google-light-blue: #e8f0fe;
-            --bg-main: #f8f9fa;
-            --card-bg: #ffffff;
+            --bg-main: #ffffff;
+            --sidebar-bg: #f8f9fa;
             --text-dark: #1f1f1f;
             --text-muted: #5f6368;
             --border-color: #e0e0e0;
@@ -26,37 +26,44 @@
         body {
             background-color: var(--bg-main);
             color: var(--text-dark);
-            min-height: 100vh;
+            height: 100vh;
             display: flex;
-            flex-direction: column;
-            padding-bottom: 70px; /* Space for bottom nav */
+            overflow: hidden;
         }
 
-        /* Top Header Bar */
+        /* Top Bar */
         .top-header {
-            background: var(--card-bg);
-            padding: 12px 16px;
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            height: 64px;
+            background: var(--bg-main);
             display: flex;
             align-items: center;
             justify-content: space-between;
-            gap: 12px;
+            padding: 0 24px;
             border-bottom: 1px solid var(--border-color);
-            position: sticky;
-            top: 0;
             z-index: 100;
+        }
+
+        .brand-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--text-dark);
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
 
         .search-bar {
             flex: 1;
+            max-width: 600px;
+            margin: 0 20px;
             background: #f1f3f4;
-            border: 1px solid transparent;
             border-radius: 28px;
-            padding: 10px 16px;
+            padding: 8px 16px;
             display: flex;
             align-items: center;
             gap: 10px;
-            color: var(--text-muted);
-            font-size: 0.95rem;
         }
 
         .search-bar input {
@@ -64,217 +71,52 @@
             background: transparent;
             width: 100%;
             outline: none;
-            color: var(--text-dark);
+            font-size: 0.95rem;
         }
 
-        .profile-badge {
-            width: 38px;
-            height: 38px;
-            border-radius: 50%;
-            background: var(--google-blue);
-            color: #ffffff;
+        /* App Layout Container */
+        .app-body {
             display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 700;
-            font-size: 0.9rem;
-            cursor: pointer;
-        }
-
-        /* Main Content Views */
-        .main-container {
-            max-width: 900px;
-            margin: 0 auto;
             width: 100%;
-            padding: 16px;
+            margin-top: 64px;
+            height: calc(100vh - 64px);
         }
 
-        .tab-view {
-            display: none;
-        }
-
-        .tab-view.active {
-            display: block;
-        }
-
-        .section-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 16px;
-        }
-
-        .section-title {
-            font-size: 1.1rem;
-            font-weight: 600;
-            color: var(--text-dark);
-        }
-
-        /* Photo Grids */
-        .photo-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-            gap: 8px;
-        }
-
-        .photo-card {
-            position: relative;
-            aspect-ratio: 1;
-            border-radius: 12px;
-            overflow: hidden;
-            background: #eaeaea;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
-            border: 1px solid var(--border-color);
-        }
-
-        .photo-card img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .star-btn {
-            position: absolute;
-            top: 6px;
-            right: 6px;
-            background: rgba(255, 255, 255, 0.85);
-            border: none;
-            border-radius: 50%;
-            width: 28px;
-            height: 28px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            font-size: 0.9rem;
-            backdrop-filter: blur(4px);
-        }
-
-        .star-btn.starred {
-            color: #fbbc04;
-        }
-
-        /* Empty States */
-        .empty-box {
-            text-align: center;
-            padding: 50px 20px;
-            background: var(--card-bg);
-            border-radius: 16px;
-            border: 1px solid var(--border-color);
-            margin-top: 10px;
-        }
-
-        .empty-icon {
-            font-size: 3rem;
-            display: block;
-            margin-bottom: 10px;
-            color: var(--google-blue);
-        }
-
-        /* Albums & Categories Grid */
-        .albums-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-            gap: 16px;
-        }
-
-        .album-card {
-            background: var(--card-bg);
-            border: 1px solid var(--border-color);
-            border-radius: 16px;
-            padding: 16px;
-            text-align: center;
-            cursor: pointer;
-            transition: transform 0.2s;
-        }
-
-        .album-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(11, 87, 208, 0.1);
-        }
-
-        .album-icon {
-            font-size: 2.2rem;
-            margin-bottom: 8px;
-            display: block;
-        }
-
-        /* People Section Grid */
-        .people-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-            gap: 16px;
-            text-align: center;
-        }
-
-        .person-avatar {
-            width: 80px;
-            height: 80px;
-            border-radius: 50%;
-            background: var(--google-light-blue);
-            color: var(--google-blue);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 2rem;
-            margin: 0 auto 8px auto;
-            border: 2px solid var(--google-blue);
-        }
-
-        /* Storage Card Widget */
-        .storage-card {
-            background: var(--card-bg);
-            border: 1px solid var(--border-color);
-            border-radius: 16px;
-            padding: 24px;
-        }
-
-        .progress-bar-bg {
-            background: #e0e0e0;
-            height: 10px;
-            border-radius: 5px;
-            overflow: hidden;
-            margin: 16px 0 8px 0;
-        }
-
-        .progress-bar-fill {
-            background: var(--google-blue);
-            height: 100%;
-            width: 5%;
-            transition: width 0.3s ease;
-        }
-
-        /* Bottom White & Blue Navigation Bar */
-        .bottom-nav {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: var(--card-bg);
-            border-top: 1px solid var(--border-color);
-            display: flex;
-            justify-content: space-around;
-            padding: 8px 0;
-            z-index: 100;
-        }
-
-        .nav-item {
+        /* Left Navigation Sidebar (Google Photos Style) */
+        .left-sidebar {
+            width: 240px;
+            background: var(--sidebar-bg);
+            border-right: 1px solid var(--border-color);
             display: flex;
             flex-direction: column;
-            align-items: center;
-            gap: 2px;
-            color: var(--text-muted);
-            font-size: 0.72rem;
-            font-weight: 500;
-            cursor: pointer;
-            padding: 6px 12px;
-            border-radius: 16px;
-            border: none;
-            background: transparent;
-            transition: all 0.2s;
+            padding: 16px 12px;
+            gap: 4px;
+            flex-shrink: 0;
         }
 
-        .nav-item.active {
+        .nav-link {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 12px 18px;
+            border-radius: 24px;
+            color: var(--text-dark);
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            border: none;
+            background: transparent;
+            width: 100%;
+            text-align: left;
+            transition: background 0.15s ease;
+        }
+
+        .nav-link:hover {
+            background: #e9ecef;
+        }
+
+        .nav-link.active {
             background: var(--google-light-blue);
             color: var(--google-blue);
             font-weight: 700;
@@ -284,281 +126,284 @@
             font-size: 1.25rem;
         }
 
-        /* Floating Camera Button (Google Blue FAB) */
+        /* Main Content Panel */
+        .main-content {
+            flex: 1;
+            padding: 24px;
+            overflow-y: auto;
+        }
+
+        .tab-view { display: none; }
+        .tab-view.active { display: block; }
+
+        /* Photo Grids */
+        .photo-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 12px;
+            margin-top: 16px;
+        }
+
+        .photo-card {
+            position: relative;
+            aspect-ratio: 1;
+            border-radius: 12px;
+            overflow: hidden;
+            background: #f1f3f4;
+            border: 1px solid var(--border-color);
+        }
+
+        .photo-card img {
+            width: 100%; height: 100%; object-fit: cover;
+        }
+
+        .star-btn {
+            position: absolute;
+            top: 8px; right: 8px;
+            background: rgba(255, 255, 255, 0.9);
+            border: none;
+            border-radius: 50%;
+            width: 28px; height: 28px;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer;
+        }
+
+        .star-btn.starred { color: #fbbc04; }
+
+        .empty-box {
+            text-align: center;
+            padding: 60px 20px;
+            background: #f8f9fa;
+            border-radius: 16px;
+            border: 1px solid var(--border-color);
+            margin-top: 16px;
+        }
+
+        /* Floating Camera Button */
         .fab-camera {
             position: fixed;
-            bottom: 80px;
-            right: 20px;
+            bottom: 32px;
+            right: 32px;
             background: var(--google-blue);
             color: #ffffff;
-            width: 60px;
-            height: 60px;
+            width: 60px; height: 60px;
             border-radius: 18px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            display: flex; align-items: center; justify-content: center;
             font-size: 1.6rem;
             box-shadow: 0 6px 18px rgba(11, 87, 208, 0.35);
             text-decoration: none;
             z-index: 90;
-            transition: transform 0.2s;
         }
 
-        .fab-camera:hover {
-            background: var(--google-blue-hover);
-            transform: scale(1.05);
+        /* Responsive Mobile Layout */
+        @media (max-width: 768px) {
+            .left-sidebar {
+                position: fixed;
+                bottom: 0; left: 0; right: 0;
+                width: 100%; height: 60px;
+                flex-direction: row;
+                justify-content: space-around;
+                padding: 4px 0;
+                border-right: none;
+                border-top: 1px solid var(--border-color);
+            }
+            .nav-link {
+                flex-direction: column;
+                gap: 2px;
+                font-size: 0.72rem;
+                padding: 6px;
+                border-radius: 12px;
+                justify-content: center;
+            }
+            .app-body { height: calc(100vh - 124px); }
+            .fab-camera { bottom: 76px; right: 20px; }
         }
     </style>
 </head>
 <body>
 
-    <!-- Top White & Blue Search Header -->
+    <!-- Header -->
     <header class="top-header">
+        <div class="brand-title">
+            <span>📸</span> Focus Photos
+        </div>
         <div class="search-bar">
             <span>🔍</span>
-            <input type="text" id="search-input" placeholder="Search photos, people, documents...">
+            <input type="text" placeholder="Search photos, people, documents...">
         </div>
-        <div class="profile-badge" title="User Account">FP</div>
+        <div style="width:36px; height:36px; border-radius:50%; background:var(--google-blue); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:700;">FP</div>
     </header>
 
-    <main class="main-container">
+    <div class="app-body">
+        <!-- Left Sidebar Navigation Bar -->
+        <nav class="left-sidebar">
+            <button class="nav-link active" onclick="switchTab('photos', this)">
+                <span class="nav-icon">🖼️</span> <span>Photos</span>
+            </button>
+            <button class="nav-link" onclick="switchTab('favorites', this)">
+                <span class="nav-icon">⭐</span> <span>Favorites</span>
+            </button>
+            <button class="nav-link" onclick="switchTab('albums', this)">
+                <span class="nav-icon">📁</span> <span>Albums</span>
+            </button>
+            <button class="nav-link" onclick="switchTab('documents', this)">
+                <span class="nav-icon">📄</span> <span>Documents</span>
+            </button>
+            <button class="nav-link" onclick="switchTab('people', this)">
+                <span class="nav-icon">👥</span> <span>People</span>
+            </button>
+            <button class="nav-link" onclick="switchTab('storage', this)">
+                <span class="nav-icon">☁️</span> <span>Storage</span>
+            </button>
+        </nav>
 
-        <!-- TAB 1: ALL PHOTOS -->
-        <section id="view-photos" class="tab-view active">
-            <div class="section-header">
-                <h2 class="section-title">Photos Feed</h2>
-                <span id="photo-count" style="font-size: 0.85rem; color: var(--text-muted);">0 photos</span>
-            </div>
-            <div id="grid-photos" class="photo-grid"></div>
-            <div id="empty-photos" class="empty-box">
-                <span class="empty-icon">🖼️</span>
-                <h3>No photos yet</h3>
-                <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px;">Tap the blue camera button to take your first photo!</p>
-            </div>
-        </section>
+        <!-- Main Content Area -->
+        <main class="main-content">
 
-        <!-- TAB 2: FAVORITES -->
-        <section id="view-favorites" class="tab-view">
-            <div class="section-header">
-                <h2 class="section-title">⭐ Favorites</h2>
-            </div>
-            <div id="grid-favorites" class="photo-grid"></div>
-            <div id="empty-favorites" class="empty-box">
-                <span class="empty-icon">⭐</span>
-                <h3>No favorite photos</h3>
-                <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px;">Tap the star icon on any photo in your feed to save it here.</p>
-            </div>
-        </section>
-
-        <!-- TAB 3: ALBUMS -->
-        <section id="view-albums" class="tab-view">
-            <div class="section-header">
-                <h2 class="section-title">📁 Albums & Collections</h2>
-            </div>
-            <div class="albums-grid">
-                <div class="album-card">
-                    <span class="album-icon">📸</span>
-                    <h4 style="font-size:0.95rem;">Camera Roll</h4>
-                    <p id="album-count-camera" style="font-size:0.75rem; color:var(--text-muted);">0 Items</p>
+            <!-- TAB 1: ALL PHOTOS -->
+            <section id="view-photos" class="tab-view active">
+                <h2>Photos</h2>
+                <div id="grid-photos" class="photo-grid"></div>
+                <div id="empty-photos" class="empty-box">
+                    <span style="font-size:3rem;">🖼️</span>
+                    <h3>No photos taken yet</h3>
+                    <p style="color:var(--text-muted); margin-top:4px;">Tap the blue camera button to take a picture!</p>
                 </div>
-                <div class="album-card">
-                    <span class="album-icon">⭐</span>
-                    <h4 style="font-size:0.95rem;">Favorites</h4>
-                    <p id="album-count-favs" style="font-size:0.75rem; color:var(--text-muted);">0 Items</p>
-                </div>
-                <div class="album-card">
-                    <span class="album-icon">📱</span>
-                    <h4 style="font-size:0.95rem;">Screenshots</h4>
-                    <p style="font-size:0.75rem; color:var(--text-muted);">0 Items</p>
-                </div>
-                <div class="album-card">
-                    <span class="album-icon">📄</span>
-                    <h4 style="font-size:0.95rem;">Documents</h4>
-                    <p style="font-size:0.75rem; color:var(--text-muted);">Auto-detected</p>
-                </div>
-            </div>
-        </section>
+            </section>
 
-        <!-- TAB 4: DOCUMENTS -->
-        <section id="view-documents" class="tab-view">
-            <div class="section-header">
-                <h2 class="section-title">📄 Document Scanner</h2>
-            </div>
-            <div class="empty-box">
-                <span class="empty-icon">🧾</span>
-                <h3>Document Library</h3>
-                <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px;">Receipts, ID cards, and notes you capture are stored here.</p>
-            </div>
-        </section>
-
-        <!-- TAB 5: PEOPLE & PETS -->
-        <section id="view-people" class="tab-view">
-            <div class="section-header">
-                <h2 class="section-title">👥 People & Pets</h2>
-            </div>
-            <div class="people-grid">
-                <div>
-                    <div class="person-avatar">👤</div>
-                    <p style="font-size:0.8rem; font-weight:600;">You</p>
+            <!-- TAB 2: FAVORITES -->
+            <section id="view-favorites" class="tab-view">
+                <h2>⭐ Favorites</h2>
+                <div id="grid-favorites" class="photo-grid"></div>
+                <div id="empty-favorites" class="empty-box">
+                    <span style="font-size:3rem;">⭐</span>
+                    <h3>No favorite photos yet</h3>
+                    <p style="color:var(--text-muted); margin-top:4px;">Star any photo in your photos tab to see it here.</p>
                 </div>
-                <div>
-                    <div class="person-avatar">🐶</div>
-                    <p style="font-size:0.8rem; font-weight:600;">Pets</p>
+            </section>
+
+            <!-- TAB 3: ALBUMS -->
+            <section id="view-albums" class="tab-view">
+                <h2>📁 Albums</h2>
+                <div class="photo-grid" style="grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));">
+                    <div style="background:#f1f3f4; padding:20px; border-radius:16px; text-align:center;">
+                        <span style="font-size:2rem;">📸</span>
+                        <h4>Camera Roll</h4>
+                        <p id="count-camera" style="color:var(--text-muted); font-size:0.8rem;">0 Items</p>
+                    </div>
+                    <div style="background:#f1f3f4; padding:20px; border-radius:16px; text-align:center;">
+                        <span style="font-size:2rem;">⭐</span>
+                        <h4>Starred Photos</h4>
+                        <p id="count-favs" style="color:var(--text-muted); font-size:0.8rem;">0 Items</p>
+                    </div>
                 </div>
-                <div>
-                    <div class="person-avatar">➕</div>
-                    <p style="font-size:0.8rem; font-weight:600; color:var(--google-blue);">Add Person</p>
+            </section>
+
+            <!-- TAB 4: DOCUMENTS -->
+            <section id="view-documents" class="tab-view">
+                <h2>📄 Documents</h2>
+                <div class="empty-box">
+                    <span style="font-size:3rem;">🧾</span>
+                    <h3>Document Vault</h3>
+                    <p style="color:var(--text-muted); margin-top:4px;">Scanned documents, IDs, and receipts will show here.</p>
                 </div>
-            </div>
-        </section>
+            </section>
 
-        <!-- TAB 6: REAL STORAGE -->
-        <section id="view-storage" class="tab-view">
-            <div class="section-header">
-                <h2 class="section-title">☁️ Storage Details</h2>
-            </div>
-            <div class="storage-card">
-                <h3 style="font-size: 1rem; color: var(--text-dark);">Browser Account Storage</h3>
-                <div class="progress-bar-bg">
-                    <div id="storage-progress" class="progress-bar-fill"></div>
+            <!-- TAB 5: PEOPLE -->
+            <section id="view-people" class="tab-view">
+                <h2>👥 People & Pets</h2>
+                <div style="display:flex; gap:20px; margin-top:20px;">
+                    <div style="text-align:center;">
+                        <div style="width:70px; height:70px; border-radius:50%; background:var(--google-light-blue); display:flex; align-items:center; justify-content:center; font-size:1.8rem; border:2px solid var(--google-blue);">👤</div>
+                        <p style="margin-top:6px; font-weight:600; font-size:0.85rem;">You</p>
+                    </div>
                 </div>
-                <p id="storage-text" style="font-size: 0.85rem; color: var(--text-muted);">Calculating real storage usage...</p>
+            </section>
 
-                <button id="btn-clear-storage" style="margin-top:20px; background:#dc2626; color:#fff; border:none; padding:10px 16px; border-radius:12px; font-weight:600; cursor:pointer;">
-                    🗑️ Clear Saved App Photos
-                </button>
-            </div>
-        </section>
+            <!-- TAB 6: REAL STORAGE -->
+            <section id="view-storage" class="tab-view">
+                <h2>☁️ Storage Usage</h2>
+                <div style="background:#f8f9fa; border:1px solid var(--border-color); padding:24px; border-radius:16px; margin-top:16px; max-width:500px;">
+                    <h3>Real Storage Used</h3>
+                    <div style="background:#e0e0e0; height:10px; border-radius:5px; margin:16px 0; overflow:hidden;">
+                        <div id="storage-bar" style="background:var(--google-blue); height:100%; width:0%;"></div>
+                    </div>
+                    <p id="storage-text" style="color:var(--text-muted); font-size:0.85rem;">Calculating usage...</p>
+                    <button onclick="clearStorage()" style="margin-top:16px; background:#dc2626; color:#fff; border:none; padding:10px 16px; border-radius:12px; font-weight:600; cursor:pointer;">Clear App Photos</button>
+                </div>
+            </section>
 
-    </main>
+        </main>
+    </div>
 
-    <!-- Floating Blue Camera Button -->
+    <!-- Floating Camera Button -->
     <a href="/camera" class="fab-camera" title="Open Camera">📷</a>
 
-    <!-- Bottom Navigation Bar (White & Blue) -->
-    <nav class="bottom-nav">
-        <button class="nav-item active" onclick="switchTab('photos', this)">
-            <span class="nav-icon">🖼️</span>
-            <span>Photos</span>
-        </button>
-        <button class="nav-item" onclick="switchTab('favorites', this)">
-            <span class="nav-icon">⭐</span>
-            <span>Favorites</span>
-        </button>
-        <button class="nav-item" onclick="switchTab('albums', this)">
-            <span class="nav-icon">📁</span>
-            <span>Albums</span>
-        </button>
-        <button class="nav-item" onclick="switchTab('documents', this)">
-            <span class="nav-icon">📄</span>
-            <span>Docs</span>
-        </button>
-        <button class="nav-item" onclick="switchTab('people', this)">
-            <span class="nav-icon">👥</span>
-            <span>People</span>
-        </button>
-        <button class="nav-item" onclick="switchTab('storage', this)">
-            <span class="nav-icon">☁️</span>
-            <span>Storage</span>
-        </button>
-    </nav>
-
     <script>
-        // Tab Switcher Logic
-        function switchTab(tabName, btnElement) {
-            document.querySelectorAll('.tab-view').forEach(view => view.classList.remove('active'));
-            document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
-
+        function switchTab(tabName, btn) {
+            document.querySelectorAll('.tab-view').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
             document.getElementById(`view-${tabName}`).classList.add('active');
-            btnElement.classList.add('active');
+            btn.classList.add('active');
         }
 
-        // App Photo Storage & Rendering Logic
         document.addEventListener('DOMContentLoaded', () => {
             loadPhotos();
             calculateStorage();
-
-            document.getElementById('btn-clear-storage').addEventListener('click', () => {
-                if (confirm("Are you sure you want to delete all saved photos?")) {
-                    localStorage.removeItem('app_photos');
-                    loadPhotos();
-                    calculateStorage();
-                }
-            });
         });
 
         function loadPhotos() {
+            const photos = JSON.parse(localStorage.getItem('app_photos') || '[]');
             const gridPhotos = document.getElementById('grid-photos');
             const gridFavs = document.getElementById('grid-favorites');
-            const emptyPhotos = document.getElementById('empty-photos');
-            const emptyFavs = document.getElementById('empty-favorites');
             
-            const appPhotos = JSON.parse(localStorage.getItem('app_photos') || '[]');
-
-            document.getElementById('photo-count').innerText = `${appPhotos.length} photos`;
-            document.getElementById('album-count-camera').innerText = `${appPhotos.length} Items`;
+            document.getElementById('count-camera').innerText = `${photos.length} Items`;
+            const favs = photos.filter(p => p.starred);
+            document.getElementById('count-favs').innerText = `${favs.length} Items`;
 
             gridPhotos.innerHTML = '';
             gridFavs.innerHTML = '';
 
-            const favPhotos = appPhotos.filter(p => p.starred);
-            document.getElementById('album-count-favs').innerText = `${favPhotos.length} Items`;
+            document.getElementById('empty-photos').style.display = photos.length ? 'none' : 'block';
+            document.getElementById('empty-favorites').style.display = favs.length ? 'none' : 'block';
 
-            // Render Photos Feed
-            if (appPhotos.length > 0) {
-                emptyPhotos.style.display = 'none';
-                appPhotos.slice().reverse().forEach(photo => {
-                    gridPhotos.appendChild(createPhotoCard(photo));
-                });
-            } else {
-                emptyPhotos.style.display = 'block';
-            }
-
-            // Render Favorites Feed
-            if (favPhotos.length > 0) {
-                emptyFavs.style.display = 'none';
-                favPhotos.slice().reverse().forEach(photo => {
-                    gridFavs.appendChild(createPhotoCard(photo));
-                });
-            } else {
-                emptyFavs.style.display = 'block';
-            }
+            photos.slice().reverse().forEach(photo => {
+                gridPhotos.appendChild(createCard(photo));
+                if (photo.starred) gridFavs.appendChild(createCard(photo));
+            });
         }
 
-        function createPhotoCard(photo) {
+        function createCard(photo) {
             const card = document.createElement('div');
             card.className = 'photo-card';
-
-            const isStarred = photo.starred ? 'starred' : '';
-            const starIcon = photo.starred ? '★' : '☆';
-
             card.innerHTML = `
-                <img src="${photo.data}" alt="Photo" />
-                <button class="star-btn ${isStarred}" onclick="toggleStar(${photo.id})">${starIcon}</button>
+                <img src="${photo.data}" />
+                <button class="star-btn ${photo.starred ? 'starred' : ''}" onclick="toggleStar(${photo.id})">${photo.starred ? '★' : '☆'}</button>
             `;
             return card;
         }
 
-        function toggleStar(photoId) {
-            let appPhotos = JSON.parse(localStorage.getItem('app_photos') || '[]');
-            appPhotos = appPhotos.map(p => {
-                if (p.id === photoId) p.starred = !p.starred;
-                return p;
-            });
-            localStorage.setItem('app_photos', JSON.stringify(appPhotos));
+        function toggleStar(id) {
+            let photos = JSON.parse(localStorage.getItem('app_photos') || '[]');
+            photos = photos.map(p => { if (p.id === id) p.starred = !p.starred; return p; });
+            localStorage.setItem('app_photos', JSON.stringify(photos));
             loadPhotos();
         }
 
         function calculateStorage() {
-            const appPhotos = localStorage.getItem('app_photos') || '';
-            const bytesUsed = new Blob([appPhotos]).size;
-            const megabytesUsed = (bytesUsed / (1024 * 1024)).toFixed(2);
+            const data = localStorage.getItem('app_photos') || '';
+            const mb = (new Blob([data]).size / (1024 * 1024)).toFixed(2);
+            const pct = Math.min(((mb / 5) * 100), 100).toFixed(1);
+            document.getElementById('storage-bar').style.width = `${pct}%`;
+            document.getElementById('storage-text').innerText = `${mb} MB used of 5.0 MB browser quota (${pct}%)`;
+        }
 
-            // Assume ~5MB standard localstorage browser limit
-            const percentage = Math.min(((megabytesUsed / 5) * 100), 100).toFixed(1);
-
-            document.getElementById('storage-progress').style.width = `${percentage}%`;
-            document.getElementById('storage-text').innerText = `${megabytesUsed} MB used of 5.0 MB browser storage allocated (${percentage}% full)`;
+        function clearStorage() {
+            if (confirm("Delete all saved app photos?")) {
+                localStorage.removeItem('app_photos');
+                loadPhotos();
+                calculateStorage();
+            }
         }
     </script>
 </body>
