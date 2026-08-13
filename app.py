@@ -1,26 +1,13 @@
 import os
 import random
-import socket
+import requests
 from flask import Flask, render_template, request, redirect, url_for, flash, session
-from flask_mail import Mail, Message
-
-socket.setdefaulttimeout(10.0)
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'your_super_secret_key_here')
 
-# -------------------------------------------------------------
-# GMAIL CONFIGURATION (Port 465 SSL for Cloud Hosting)
-# -------------------------------------------------------------
-app.config['MAIL_SERVER'] = 'smtp.gmail.com'
-app.config['MAIL_PORT'] = 465
-app.config['MAIL_USE_TLS'] = False
-app.config['MAIL_USE_SSL'] = True
-app.config['MAIL_USERNAME'] = 'qphocus@gmail.com'
-app.config['MAIL_PASSWORD'] = 'njlljroqlixueyci'
-app.config['MAIL_DEFAULT_SENDER'] = ('Focus Photos', 'qphocus@gmail.com')
-
-mail = Mail(app)
+# Fetch Resend API Key from Environment
+RESEND_API_KEY = os.environ.get('RESEND_API_KEY', '')
 
 # In-memory user database simulation
 users_db = {}
@@ -37,11 +24,20 @@ def login():
         password = request.form.get('password', '').strip()
 
         if action == 'signup':
+            fullname = request.form.get('fullname', '').strip()
+            phone = request.form.get('phone', '').strip()
+            username = request.form.get('username', '').strip()
+
             if len(password) < 6:
                 flash("Password must be at least 6 characters long.", "error")
                 return render_template('login.html')
 
-            users_db[email] = password
+            users_db[email] = {
+                'fullname': fullname,
+                'phone': phone,
+                'username': username,
+                'password': password
+            }
             session['user_email'] = email
             return send_and_redirect_otp(email)
 
@@ -55,17 +51,39 @@ def send_and_redirect_otp(email):
     otp = random.randint(100000, 999999)
     session['otp'] = otp
 
-    # Send OTP via Email using SSL
+    print(f"\n==========================================")
+    print(f"🔑 VERIFICATION CODE FOR {email}: {otp}")
+    print(f"==========================================\n")
+
+    # Send email via Resend HTTPS API (Bypasses Render SMTP restrictions)
+    url = "https://api.resend.com/emails"
+    headers = {
+        "Authorization": f"Bearer {RESEND_API_KEY}",
+        "Content-Type": "application/json"
+    }
+    
+    payload = {
+        "from": "Focus Photos <onboarding@resend.dev>",
+        "to": [email],
+        "subject": "Your Focus Photos Verification Code 🔑",
+        "html": f"""
+        <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
+            <h2>Focus Photos Verification</h2>
+            <p>Your verification code is:</p>
+            <h1 style="color: #00f0ff; letter-spacing: 4px;">{otp}</h1>
+            <p>Enter this code in your browser to log in.</p>
+        </div>
+        """
+    }
+
     try:
-        msg = Message(
-            subject="Your Focus Photos Verification Code 🔑",
-            recipients=[email]
-        )
-        msg.body = f"Hello,\n\nYour Focus Photos verification code is: {otp}\n\nPlease enter this code to complete your login."
-        mail.send(msg)
-        print(f"[SUCCESS] Verification email sent to {email}")
+        response = requests.post(url, json=payload, headers=headers, timeout=8)
+        if response.status_code == 200 or response.status_code == 201:
+            print(f"[SUCCESS] Verification email sent to {email}")
+        else:
+            print(f"[RESEND NOTICE] {response.status_code} Response: {response.text}")
     except Exception as e:
-        print(f"[EMAIL NOTICE] Could not send live email: {e}")
+        print(f"[ERROR] Could not reach Resend API: {e}")
 
     return redirect(url_for('verify_otp'))
 
