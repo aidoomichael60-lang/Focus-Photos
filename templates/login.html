@@ -1,63 +1,56 @@
-{% extends "base.html" %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Focus Photos - Log In</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        body { background: #f8f9fa; display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; }
+        .card { background: #fff; padding: 40px 30px; border-radius: 24px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); width: 100%; max-width: 420px; text-align: center; border: 1px solid #e0e0e0; }
+        h2 { margin-top: 12px; margin-bottom: 6px; color: #1f1f1f; }
+        p { color: #5f6368; font-size: 0.9rem; margin-bottom: 24px; }
+        .input-group { text-align: left; margin-bottom: 16px; }
+        label { display: block; font-size: 0.85rem; font-weight: 600; color: #3c4043; margin-bottom: 6px; }
+        input { width: 100%; padding: 12px 16px; border-radius: 12px; border: 1px solid #ccc; font-size: 0.95rem; outline: none; transition: border-color 0.2s; }
+        input:focus { border-color: #0b57d0; box-shadow: 0 0 0 2px rgba(11,87,208,0.2); }
+        .divider { display: flex; align-items: center; text-align: center; color: #70757a; font-size: 0.8rem; margin: 16px 0; }
+        .divider::before, .divider::after { content: ''; flex: 1; border-bottom: 1px solid #dadce0; }
+        .divider span { padding: 0 10px; }
+        button { width: 100%; background: #0b57d0; color: #fff; border: none; padding: 14px; border-radius: 28px; font-weight: 600; font-size: 1rem; cursor: pointer; margin-top: 8px; }
+        button:hover { background: #1a73e8; }
+        .flash { color: #dc2626; font-size: 0.85rem; margin-bottom: 16px; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <span style="font-size: 3rem;">📸</span>
+        <h2>Focus Photos</h2>
+        <p>Enter your email or phone number to receive a verification code</p>
 
-{% block title %}Login - Focus Photos{% endblock %}
+        {% with messages = get_flashed_messages() %}
+          {% if messages %}
+            {% for message in messages %}
+              <div class="flash">{{ message }}</div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
 
-{% block content %}
-<div class="login-container-wrapper">
-    <div class="login-box" style="width: 380px;">
-        <div class="login-content">
-            <div class="login-header">
-                <i class="fa-solid fa-camera pink-icon"></i>
-                <span>FOCUS PHOTOS</span>
-                <i class="fa-solid fa-lock cyan-icon"></i>
+        <form method="POST">
+            <div class="input-group">
+                <label for="email">Email Address</label>
+                <input type="email" id="email" name="email" placeholder="e.g. user@gmail.com">
             </div>
 
-            {% with messages = get_flashed_messages() %}
-              {% if messages %}
-                {% for message in messages %}
-                  <div class="alert-message">{{ message }}</div>
-                {% endfor %}
-              {% endif %}
-            {% endwith %}
+            <div class="divider"><span>OR / AND</span></div>
 
-            <form method="POST" action="{{ url_for('login') }}" style="width: 100%;">
-                <div class="input-group-item">
-                    <input type="text" name="username" placeholder="Username" required>
-                </div>
-                
-                <div class="input-group-item" style="position: relative; margin-bottom: 20px;">
-                    <input type="password" id="login_password" name="password" placeholder="Password" style="padding-right: 45px;" required>
-                    <i class="fa-solid fa-eye" id="toggleLoginPwd" onclick="toggleLoginVisibility()" 
-                       style="position: absolute; right: 15px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #727b8e;"></i>
-                </div>
-                
-                <button type="submit" class="btn-submit">Sign in</button>
-            </form>
-
-            <div class="login-footer">
-                <a href="#" class="forgot">Forgot Password</a>
-                <a href="{{ url_for('register') }}" class="signup">Sign up</a>
+            <div class="input-group">
+                <label for="phone">Phone Number</label>
+                <input type="tel" id="phone" name="phone" placeholder="e.g. 0548327035">
             </div>
-        </div>
+
+            <button type="submit">Send Code 📩</button>
+        </form>
     </div>
-</div>
-
-<script>
-function toggleLoginVisibility() {
-    const field = document.getElementById("login_password");
-    const icon = document.getElementById("toggleLoginPwd");
-    
-    if (field.type === "password") {
-        field.type = "text";
-        icon.classList.remove("fa-eye");
-        icon.classList.add("fa-eye-slash");
-        icon.style.color = "#35eaff";
-    } else {
-        field.type = "password";
-        icon.classList.remove("fa-eye-slash");
-        icon.style.color = "#727b8e";
-        icon.classList.add("fa-eye");
-    }
-}
-</script>
-{% endblock %}
+</body>
+</html>
