@@ -4,7 +4,7 @@ import socket
 from flask import Flask, render_template, request, redirect, url_for, flash, session
 from flask_mail import Mail, Message
 
-# Prevent SMTP connections from freezing Gunicorn workers (5-second max timeout)
+# 5-second socket timeout to keep Gunicorn fast and responsive
 socket.setdefaulttimeout(5.0)
 
 app = Flask(__name__)
@@ -17,7 +17,8 @@ app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 587
 app.config['MAIL_USE_TLS'] = True
 app.config['MAIL_USERNAME'] = 'qphocus@gmail.com'
-app.config['MAIL_PASSWORD'] = 'your_16_digit_app_password'  # Replace with Google App Password when ready
+# Your Google App Password added here:
+app.config['MAIL_PASSWORD'] = 'njlljroqlixueyci'
 app.config['MAIL_DEFAULT_SENDER'] = ('Focus Photos', 'qphocus@gmail.com')
 
 mail = Mail(app)
@@ -27,32 +28,26 @@ mail = Mail(app)
 # -------------------------------------------------------------
 @app.route('/', methods=['GET', 'POST'])
 def verify_otp():
-    # Generate OTP on first visit
+    # Generate OTP on first visit or session reset
     if 'otp' not in session:
         session['otp'] = random.randint(100000, 999999)
     
     otp = session['otp']
     recipient_email = session.get('user_email', 'qphocus@gmail.com')
 
-    # Try sending email only once per session and only if password is configured
+    # Automatically send the email when the page loads
     if request.method == 'GET' and 'email_attempted' not in session:
         session['email_attempted'] = True
-        
-        if app.config['MAIL_PASSWORD'] != 'your_16_digit_app_password':
-            try:
-                msg = Message(
-                    subject="Your Focus Photos Verification Code 🔑",
-                    recipients=[recipient_email]
-                )
-                msg.body = f"Hello,\n\nYour Focus Photos verification code is: {otp}\n\nPlease enter this code to access your account."
-                mail.send(msg)
-                print(f"[SUCCESS] Email sent to {recipient_email}")
-            except Exception as e:
-                print(f"[EMAIL NOTICE] Could not send email: {e}")
-        else:
-            print(f"\n==========================================")
-            print(f"🔑 VERIFICATION CODE FOR LOGIN: {otp}")
-            print(f"==========================================\n")
+        try:
+            msg = Message(
+                subject="Your Focus Photos Verification Code 🔑",
+                recipients=[recipient_email]
+            )
+            msg.body = f"Hello,\n\nYour Focus Photos verification code is: {otp}\n\nPlease enter this code to access your account."
+            mail.send(msg)
+            print(f"[SUCCESS] Live verification email sent to {recipient_email}")
+        except Exception as e:
+            print(f"[EMAIL ERROR] Could not send email via SMTP: {e}")
 
     # Handle OTP Submission
     if request.method == 'POST':
