@@ -1,12 +1,13 @@
+import os
+import random
 from flask import Flask, render_template, request, redirect, url_for, flash, session
 from flask_mail import Mail, Message
-import random
 
 app = Flask(__name__)
-app.secret_key = 'your_super_secret_key_here'
+app.secret_key = os.environ.get('SECRET_KEY', 'your_super_secret_key_here')
 
 # -------------------------------------------------------------
-# GMAIL SMTP CONFIGURATION
+# GMAIL SMTP CONFIGURATION (with strict timeouts)
 # -------------------------------------------------------------
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 587
@@ -28,7 +29,7 @@ def verify_otp():
         otp = session['otp']
         recipient_email = session.get('user_email', 'qphocus@gmail.com')
 
-        # Send Email safely (wrapped in try/except so it NEVER causes HTTP 500)
+        # Safely attempt email send without blocking the app
         try:
             msg = Message(
                 subject="Your Focus Photos Verification Code 🔑",
@@ -84,4 +85,5 @@ def logout():
     return redirect(url_for('verify_otp'))
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    port = int(os.environ.get('PORT', 10000))
+    app.run(host='0.0.0.0', port=port, debug=False)
