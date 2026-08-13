@@ -20,7 +20,7 @@ app.config['MAIL_DEFAULT_SENDER'] = ('Focus Photos', 'qphocus@gmail.com')
 mail = Mail(app)
 
 # -------------------------------------------------------------
-# 1. HOMEPAGE ROUTE (Redirects to OTP verification)
+# 1. HOMEPAGE ROUTE
 # -------------------------------------------------------------
 @app.route('/')
 def home():
@@ -65,18 +65,27 @@ def verify_otp():
     return render_template('verify_otp.html', message=message)
 
 # -------------------------------------------------------------
-# 3. DASHBOARD ROUTE (Google Photos Style Layout)
+# 3. DASHBOARD ROUTE
 # -------------------------------------------------------------
 @app.route('/dashboard')
 def dashboard():
     return render_template('dashboard.html')
 
 # -------------------------------------------------------------
-# 4. CAMERA ROUTE (Samsung Camera UI + Features)
+# 4. CAMERA ROUTE
 # -------------------------------------------------------------
 @app.route('/camera')
 def camera():
     return render_template('camera.html')
+
+# -------------------------------------------------------------
+# 5. LOGOUT ROUTE
+# -------------------------------------------------------------
+@app.route('/logout')
+def logout():
+    session.clear()
+    flash("You have been logged out.", "info")
+    return redirect(url_for('verify_otp'))
 
 if __name__ == '__main__':
     app.run(debug=True)
