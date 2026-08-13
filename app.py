@@ -6,83 +6,41 @@ app = Flask(__name__)
 app.secret_key = 'your_super_secret_key_here'
 
 # -------------------------------------------------------------
-# GMAIL CONFIGURATION
+# GMAIL SMTP CONFIGURATION
 # -------------------------------------------------------------
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 587
 app.config['MAIL_USE_TLS'] = True
 app.config['MAIL_USERNAME'] = 'qphocus@gmail.com'
-# To send actual emails, replace 'your_16_digit_app_password' below with a Google App Password
 app.config['MAIL_PASSWORD'] = 'your_16_digit_app_password'
 app.config['MAIL_DEFAULT_SENDER'] = ('Focus Photos', 'qphocus@gmail.com')
 
 mail = Mail(app)
 
 # -------------------------------------------------------------
-# 1. LOGIN ROUTE (Email, Phone, or Both)
+# 1. HOMEPAGE / VERIFICATION ROUTE
 # -------------------------------------------------------------
 @app.route('/', methods=['GET', 'POST'])
-def login():
-    if request.method == 'POST':
-        email = request.form.get('email', '').strip()
-        phone = request.form.get('phone', '').strip()
-
-        if not email and not phone:
-            flash("Please enter an email address or phone number.", "error")
-            return redirect(url_for('login'))
-
-        # Save details to session
-        session['user_email'] = email
-        session['user_phone'] = phone
-
-        # Generate 6-digit OTP
-        otp = random.randint(100000, 999999)
-        session['otp'] = otp
-
-        # Console print so you can always see the code during testing
-        print(f"\n==========================================")
-        print(f"🔑 VERIFICATION CODE FOR LOGIN: {otp}")
-        print(f"📧 Email: {email if email else 'N/A'}")
-        print(f"📱 Phone: {phone if phone else 'N/A'}")
-        print(f"==========================================\n")
-
-        # Try sending Email if user provided one
-        if email:
-            try:
-                msg = Message(
-                    subject="Your Focus Photos Code 🔑",
-                    recipients=[email]
-                )
-                msg.body = f"Hello,\n\nYour Focus Photos verification code is: {otp}\n\nPlease enter this code to complete your login."
-                mail.send(msg)
-                print(f"[SUCCESS] Email sent to {email}")
-            except Exception as e:
-                print(f"[EMAIL NOTICE] Could not send live email: {e}")
-
-        # SMS trigger notice
-        if phone:
-            print(f"[SMS NOTICE] Verification code {otp} targeted for phone: {phone}")
-
-        return redirect(url_for('verify_otp'))
-
-    return render_template('login.html')
-
-# -------------------------------------------------------------
-# 2. VERIFY CODE ROUTE (Locks app until correct code is entered)
-# -------------------------------------------------------------
-@app.route('/verify-otp', methods=['GET', 'POST'])
 def verify_otp():
-    email = session.get('user_email')
-    phone = session.get('user_phone')
+    # Generate OTP on first visit
+    if 'otp' not in session:
+        session['otp'] = random.randint(100000, 999999)
+        otp = session['otp']
+        recipient_email = session.get('user_email', 'qphocus@gmail.com')
 
-    if not email and not phone:
-        return redirect(url_for('login'))
+        # Send Email safely (wrapped in try/except so it NEVER causes HTTP 500)
+        try:
+            msg = Message(
+                subject="Your Focus Photos Verification Code 🔑",
+                recipients=[recipient_email]
+            )
+            msg.body = f"Hello,\n\nYour Focus Photos verification code is: {otp}\n\nPlease enter this code to access your account."
+            mail.send(msg)
+            print(f"[SUCCESS] Verification email sent to {recipient_email}")
+        except Exception as e:
+            print(f"[EMAIL NOTICE] Could not send email via SMTP: {e}")
 
-    destinations = []
-    if email: destinations.append(email)
-    if phone: destinations.append(phone)
-    destination_str = " & ".join(destinations)
-
+    # Handle OTP Submission
     if request.method == 'POST':
         user_otp = request.form.get('otp', '').strip()
         session_otp = str(session.get('otp', ''))
@@ -93,33 +51,37 @@ def verify_otp():
         else:
             flash("Invalid verification code. Please try again.", "error")
 
-    return render_template('verify_otp.html', destination=destination_str)
+    recipient_email = session.get('user_email', 'qphocus@gmail.com')
+    recipient_phone = session.get('user_phone', '0548327035')
+    message = f"Verification code sent to {recipient_email} / {recipient_phone}."
+
+    return render_template('verify_otp.html', message=message)
 
 # -------------------------------------------------------------
-# 3. DASHBOARD ROUTE (Protected)
+# 2. PROTECTED DASHBOARD
 # -------------------------------------------------------------
 @app.route('/dashboard')
 def dashboard():
     if not session.get('logged_in'):
-        return redirect(url_for('login'))
+        return redirect(url_for('verify_otp'))
     return render_template('dashboard.html')
 
 # -------------------------------------------------------------
-# 4. CAMERA ROUTE (Protected)
+# 3. PROTECTED CAMERA
 # -------------------------------------------------------------
 @app.route('/camera')
 def camera():
     if not session.get('logged_in'):
-        return redirect(url_for('login'))
+        return redirect(url_for('verify_otp'))
     return render_template('camera.html')
 
 # -------------------------------------------------------------
-# 5. LOGOUT ROUTE
+# 4. LOGOUT ROUTE
 # -------------------------------------------------------------
 @app.route('/logout')
 def logout():
     session.clear()
-    return redirect(url_for('login'))
+    return redirect(url_for('verify_otp'))
 
 if __name__ == '__main__':
     app.run(debug=True)
