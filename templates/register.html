@@ -3,40 +3,60 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sign Up - Focus Photos</title>
+    <title>Dashboard - Focus Photos</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, sans-serif; }
-        body { background: #000; color: #fff; display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; }
-        .auth-card { background: #1c1c1e; border: 1px solid #2c2c2e; padding: 30px; border-radius: 20px; width: 100%; max-width: 380px; }
-        h2 { font-size: 24px; margin-bottom: 20px; text-align: center; }
-        input { width: 100%; padding: 14px; margin-bottom: 15px; border-radius: 12px; border: 1px solid #2c2c2e; background: #2c2c2e; color: #fff; font-size: 15px; }
-        button { width: 100%; padding: 14px; border-radius: 12px; border: none; background: #30d158; color: #fff; font-weight: 600; font-size: 16px; cursor: pointer; }
-        .alert { background: rgba(255,69,58,0.2); color: #ff453a; padding: 10px; border-radius: 8px; font-size: 13px; margin-bottom: 15px; text-align: center; }
-        .link { text-align: center; margin-top: 15px; font-size: 14px; }
-        .link a { color: #0a84ff; text-decoration: none; }
+        body { background-color: #000000; color: #ffffff; padding: 20px; min-height: 100vh; }
+        .header { display: flex; justify-content: space-between; align-items: center; padding-bottom: 20px; border-bottom: 1px solid #2c2c2e; max-width: 900px; margin: 0 auto; }
+        .user-info { font-size: 13px; color: #8e8e93; margin-top: 4px; }
+        .actions { display: flex; gap: 10px; align-items: center; }
+        .btn { background-color: #0a84ff; color: #ffffff; padding: 10px 16px; border-radius: 20px; text-decoration: none; font-size: 14px; font-weight: 600; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+        .btn-secondary { background-color: #1c1c1e; color: #0a84ff; border: 1px solid #2c2c2e; }
+        .btn-logout { background: transparent; color: #ff453a; text-decoration: none; font-size: 14px; margin-left: 10px; }
+        .gallery-container { max-width: 900px; margin: 30px auto; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 15px; margin-top: 20px; }
+        .grid-item { aspect-ratio: 1; border-radius: 14px; overflow: hidden; background-color: #1c1c1e; border: 1px solid #2c2c2e; }
+        .grid-item img { width: 100%; height: 100%; object-fit: cover; }
+        .empty-state { text-align: center; padding: 60px 20px; color: #8e8e93; background-color: #1c1c1e; border-radius: 16px; border: 1px solid #2c2c2e; margin-top: 20px; }
     </style>
 </head>
 <body>
-    <div class="auth-card">
-        <h2>Create Account</h2>
 
-        {% with messages = get_flashed_messages(with_categories=true) %}
-          {% if messages %}
-            {% for category, message in messages %}
-              <div class="alert">{{ message }}</div>
-            {% endfor %}
-          {% endif %}
-        {% endwith %}
+    <div class="header">
+        <div>
+            <h1>Focus Photos</h1>
+            <p class="user-info">Logged in as: <strong>{{ current_user.email }}</strong></p>
+        </div>
+        <div class="actions">
+            <!-- Native Direct File Capture Form -->
+            <form action="{{ url_for('upload_photo') }}" method="POST" enctype="multipart/form-data" id="quick-form">
+                <input type="file" name="photo" id="quick-cam" accept="image/*" capture="environment" style="display: none;" onchange="document.getElementById('quick-form').submit()">
+                <button type="button" class="btn btn-secondary" onclick="document.getElementById('quick-cam').click()">⚡ Quick Snap</button>
+            </form>
 
-        <form action="{{ url_for('register') }}" method="POST">
-            <input type="email" name="email" placeholder="Email" required>
-            <input type="password" name="password" placeholder="Password" required>
-            <button type="submit">Sign Up</button>
-        </form>
-
-        <div class="link">
-            Already have an account? <a href="{{ url_for('login') }}">Sign In</a>
+            <a href="{{ url_for('camera_page') }}" class="btn">📸 Open Camera</a>
+            <a href="{{ url_for('logout') }}" class="btn-logout">Logout</a>
         </div>
     </div>
+
+    <div class="gallery-container">
+        <h2>Your Gallery</h2>
+
+        {% if photos %}
+            <div class="grid">
+                {% for photo in photos %}
+                    <div class="grid-item">
+                        <img src="{{ url_for('uploaded_file', filename=photo.filename) }}" alt="Photo">
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <p style="font-size: 16px; margin-bottom: 8px;">No photos taken yet.</p>
+                <p style="font-size: 13px;">Tap <strong>Quick Snap</strong> or <strong>Open Camera</strong> above to add photos.</p>
+            </div>
+        {% endif %}
+    </div>
+
 </body>
 </html>
