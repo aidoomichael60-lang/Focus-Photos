@@ -12,12 +12,16 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="Focus Photos">
 
+    <!-- Cropper.js for iPhone-Style Cropping & Editing -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+
     <style>
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
         }
 
         body {
@@ -223,17 +227,24 @@
 
         .grid-container {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
             gap: 15px;
         }
 
         .media-card {
             background: #fff;
             border: 1px solid #e0e0e0;
-            border-radius: 10px;
+            border-radius: 12px;
             overflow: hidden;
             position: relative;
             box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            cursor: pointer;
+        }
+
+        .media-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.12);
         }
 
         .media-card img {
@@ -251,10 +262,9 @@
             align-items: center;
         }
 
-        .delete-btn {
+        .action-icon-btn {
             background: none;
             border: none;
-            color: #dc3545;
             cursor: pointer;
             font-size: 14px;
             padding: 2px 5px;
@@ -267,6 +277,145 @@
             text-align: center;
             color: #70757a;
             background-color: #ffffff;
+        }
+
+        /* --- iOS Style Fullscreen Photo Editor Modal --- */
+        .editor-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: #000000;
+            z-index: 99999;
+            flex-direction: column;
+            color: #ffffff;
+        }
+
+        .editor-topbar {
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            background: rgba(20, 20, 20, 0.9);
+            border-bottom: 1px solid #2c2c2e;
+        }
+
+        .editor-topbar button {
+            background: none;
+            border: none;
+            color: #0a84ff;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .editor-topbar button.done-btn {
+            color: #30d158;
+        }
+
+        .editor-stage {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            position: relative;
+            overflow: hidden;
+            background-color: #050505;
+        }
+
+        .editor-stage img {
+            max-width: 90vw;
+            max-height: 60vh;
+            display: block;
+        }
+
+        .editor-toolbar {
+            background-color: #1c1c1e;
+            border-top: 1px solid #2c2c2e;
+            padding: 15px 20px 30px 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .editor-tabs {
+            display: flex;
+            justify-content: center;
+            gap: 25px;
+        }
+
+        .tab-btn {
+            background: none;
+            border: none;
+            color: #8e8e93;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            padding: 6px 12px;
+            border-radius: 16px;
+        }
+
+        .tab-btn.active {
+            color: #ffffff;
+            background-color: #2c2c2e;
+        }
+
+        .controls-panel {
+            display: none;
+            flex-direction: column;
+            gap: 12px;
+            max-width: 500px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .controls-panel.active {
+            display: flex;
+        }
+
+        .slider-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 13px;
+        }
+
+        .slider-row label {
+            width: 80px;
+            color: #ebebf5;
+        }
+
+        .slider-row input[type="range"] {
+            flex: 1;
+            accent-color: #0a84ff;
+        }
+
+        .tool-btn-group {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .tool-btn {
+            background: #2c2c2e;
+            border: none;
+            color: #ffffff;
+            padding: 10px 18px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .tool-btn:hover {
+            background: #3a3a3c;
         }
     </style>
 
@@ -381,9 +530,60 @@
         </section>
     </main>
 
+    <!-- iOS-Style Photo Editor Modal -->
+    <div id="editor-modal" class="editor-modal">
+        <div class="editor-topbar">
+            <button onclick="closeEditor()">Cancel</button>
+            <span style="font-weight: 600; font-size: 15px;">Edit Photo</span>
+            <button class="done-btn" onclick="saveEditedPhoto()">Done</button>
+        </div>
+
+        <div class="editor-stage">
+            <img id="editor-image" src="" alt="Editing Preview">
+        </div>
+
+        <div class="editor-toolbar">
+            <div class="editor-tabs">
+                <button class="tab-btn active" id="tab-btn-adjust" onclick="setEditorSubTab('adjust')">☀️ Adjust</button>
+                <button class="tab-btn" id="tab-btn-crop" onclick="setEditorSubTab('crop')">✂️ Crop & Rotate</button>
+            </div>
+
+            <!-- Adjustment Sliders -->
+            <div id="panel-adjust" class="controls-panel active">
+                <div class="slider-row">
+                    <label>Brightness</label>
+                    <input type="range" id="slider-brightness" min="50" max="150" value="100" oninput="applyFilters()">
+                </div>
+                <div class="slider-row">
+                    <label>Contrast</label>
+                    <input type="range" id="slider-contrast" min="50" max="150" value="100" oninput="applyFilters()">
+                </div>
+                <div class="slider-row">
+                    <label>Saturation</label>
+                    <input type="range" id="slider-saturate" min="0" max="200" value="100" oninput="applyFilters()">
+                </div>
+                <div class="slider-row">
+                    <label>Warmth</label>
+                    <input type="range" id="slider-warmth" min="-50" max="50" value="0" oninput="applyFilters()">
+                </div>
+            </div>
+
+            <!-- Crop & Rotate Controls -->
+            <div id="panel-crop" class="controls-panel">
+                <div class="tool-btn-group">
+                    <button class="tool-btn" onclick="rotatePhoto(-90)">↺ Rotate Left</button>
+                    <button class="tool-btn" onclick="rotatePhoto(90)">↻ Rotate Right</button>
+                    <button class="tool-btn" onclick="resetCrop()">🔄 Reset</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
         const TOTAL_STORAGE_BYTES = 20 * 1024 * 1024 * 1024;
         let usedBytes = 0;
+        let cropper = null;
+        let activePhotoFilename = null;
 
         function updateStorageDisplay() {
             let percentage = (usedBytes / TOTAL_STORAGE_BYTES) * 100;
@@ -447,13 +647,17 @@
 
                         const img = document.createElement('img');
                         img.src = photo.url;
+                        img.onclick = () => openEditor(photo.url, photo.filename);
                         card.appendChild(img);
 
                         const info = document.createElement('div');
                         info.className = 'media-info';
                         info.innerHTML = `
                             <span>${(photo.size / (1024*1024)).toFixed(1)} MB</span>
-                            <button class="delete-btn" title="Delete Photo" onclick="deletePhoto('${photo.filename}')">🗑️</button>
+                            <div>
+                                <button class="action-icon-btn" title="Edit Photo" onclick="openEditor('${photo.url}', '${photo.filename}')">✏️</button>
+                                <button class="action-icon-btn" title="Delete Photo" onclick="deletePhoto('${photo.filename}')">🗑️</button>
+                            </div>
                         `;
                         card.appendChild(info);
 
@@ -463,6 +667,133 @@
                     updateStorageDisplay();
                 })
                 .catch(err => console.error("Error fetching photos:", err));
+        }
+
+        /* --- Photo Editor Logic --- */
+        function openEditor(imageUrl, filename) {
+            activePhotoFilename = filename;
+            const editorImg = document.getElementById('editor-image');
+            editorImg.src = imageUrl;
+
+            // Reset Sliders
+            document.getElementById('slider-brightness').value = 100;
+            document.getElementById('slider-contrast').value = 100;
+            document.getElementById('slider-saturate').value = 100;
+            document.getElementById('slider-warmth').value = 0;
+            applyFilters();
+
+            document.getElementById('editor-modal').style.display = 'flex';
+            setEditorSubTab('adjust');
+        }
+
+        function closeEditor() {
+            if (cropper) {
+                cropper.destroy();
+                cropper = null;
+            }
+            document.getElementById('editor-modal').style.display = 'none';
+        }
+
+        function setEditorSubTab(tab) {
+            document.getElementById('tab-btn-adjust').classList.toggle('active', tab === 'adjust');
+            document.getElementById('tab-btn-crop').classList.toggle('active', tab === 'crop');
+
+            document.getElementById('panel-adjust').classList.toggle('active', tab === 'adjust');
+            document.getElementById('panel-crop').classList.toggle('active', tab === 'crop');
+
+            const editorImg = document.getElementById('editor-image');
+
+            if (tab === 'crop' && !cropper) {
+                cropper = new Cropper(editorImg, {
+                    viewMode: 1,
+                    background: false,
+                    autoCropArea: 0.9,
+                    responsive: true
+                });
+            }
+        }
+
+        function applyFilters() {
+            const brightness = document.getElementById('slider-brightness').value;
+            const contrast = document.getElementById('slider-contrast').value;
+            const saturate = document.getElementById('slider-saturate').value;
+            const warmth = document.getElementById('slider-warmth').value;
+
+            // Warmth effect using sepia/hue-rotate simulation
+            const sepia = warmth > 0 ? warmth : 0;
+            const hue = warmth < 0 ? warmth : 0;
+
+            const filterStr = `brightness(${brightness}%) contrast(${contrast}%) saturate(${saturate}%) sepia(${sepia}%) hue-rotate(${hue}deg)`;
+
+            const target = cropper ? cropper.getCanvas() : document.getElementById('editor-image');
+            if (cropper) {
+                const cropperContainer = document.querySelector('.cropper-container');
+                if (cropperContainer) cropperContainer.style.filter = filterStr;
+            } else {
+                document.getElementById('editor-image').style.filter = filterStr;
+            }
+        }
+
+        function rotatePhoto(degree) {
+            if (cropper) {
+                cropper.rotate(degree);
+            }
+        }
+
+        function resetCrop() {
+            if (cropper) {
+                cropper.reset();
+            }
+        }
+
+        function saveEditedPhoto() {
+            const imageElement = document.getElementById('editor-image');
+            
+            // Create offscreen canvas to bake in adjustment filters & crops
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+
+            let sourceCanvas;
+
+            if (cropper) {
+                sourceCanvas = cropper.getCroppedCanvas();
+            } else {
+                sourceCanvas = imageElement;
+            }
+
+            canvas.width = sourceCanvas.naturalWidth || sourceCanvas.width;
+            canvas.height = sourceCanvas.naturalHeight || sourceCanvas.height;
+
+            const brightness = document.getElementById('slider-brightness').value;
+            const contrast = document.getElementById('slider-contrast').value;
+            const saturate = document.getElementById('slider-saturate').value;
+            const warmth = document.getElementById('slider-warmth').value;
+
+            const sepia = warmth > 0 ? warmth : 0;
+            const hue = warmth < 0 ? warmth : 0;
+
+            ctx.filter = `brightness(${brightness}%) contrast(${contrast}%) saturate(${saturate}%) sepia(${sepia}%) hue-rotate(${hue}deg)`;
+            ctx.drawImage(sourceCanvas, 0, 0, canvas.width, canvas.height);
+
+            canvas.toBlob(blob => {
+                const formData = new FormData();
+                const filename = activePhotoFilename || `edited_${Date.now()}.png`;
+                formData.append('photo', blob, filename);
+
+                fetch('/upload-photo', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(res => res.json())
+                .then(data => {
+                    closeEditor();
+                    loadUserPhotos();
+                })
+                .catch(err => {
+                    alert("Error saving edited photo.");
+                    console.error(err);
+                });
+            }, 'image/png');
         }
 
         function handleFileUpload(event) {
