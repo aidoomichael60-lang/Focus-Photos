@@ -1,89 +1,51 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Camera - Focus Photos</title>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: sans-serif; }
-    body { background-color: #0f172a; color: #fff; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: space-between; padding: 20px; }
-    .camera-header { width: 100%; max-width: 500px; display: flex; justify-content: space-between; align-items: center; }
-    .btn-icon { background: #1e293b; color: #fff; border: none; padding: 12px; border-radius: 50%; cursor: pointer; font-size: 18px; text-decoration: none; }
-    .viewport { width: 100%; max-width: 500px; height: 60vh; background: #000; border-radius: 24px; overflow: hidden; position: relative; border: 2px solid #334155; }
-    video, canvas { width: 100%; height: 100%; object-fit: cover; }
-    .controls { display: flex; gap: 20px; align-items: center; margin-bottom: 20px; }
-    .snap-btn { width: 70px; height: 70px; border-radius: 50%; background: #2563eb; border: 4px solid #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 24px; color: #fff; }
-    .flash-btn { background: #334155; color: #fff; border: none; padding: 14px; border-radius: 50%; cursor: pointer; font-size: 18px; }
-    .flash-btn.active { background: #eab308; color: #000; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Focus Photos - Pro Camera</title>
+    <link rel="stylesheet" href="camera.css">
 </head>
 <body>
-  <div class="camera-header">
-    <a href="{{ url_for('dashboard') }}" class="btn-icon"><i class="fa-solid fa-arrow-left"></i></a>
-    <h2>Live Camera</h2>
-    <button class="flash-btn" id="flashToggle" onclick="toggleFlash()"><i class="fa-solid fa-bolt"></i></button>
-  </div>
+    <div class="camera-container">
+        <!-- Live Video Viewfinder -->
+        <div class="viewfinder-wrapper">
+            <video id="cameraFeed" autoplay playsinline muted></video>
+            <div id="liveBadge" class="live-badge hidden">LIVE</div>
+        </div>
 
-  <div class="viewport">
-    <video id="video" autoplay playsinline></video>
-    <canvas id="canvas" style="display:none;"></canvas>
-  </div>
+        <!-- Controls Bar -->
+        <div class="controls-panel">
+            <!-- Filter Selection Bar -->
+            <div class="filter-bar">
+                <button class="filter-btn active" onclick="applyFilter('none')">Original</button>
+                <button class="filter-btn" onclick="applyFilter('vivid')">Vivid</button>
+                <button class="filter-btn" onclick="applyFilter('vivid-warm')">Vivid Warm</button>
+                <button class="filter-btn" onclick="applyFilter('vivid-cool')">Vivid Cool</button>
+                <button class="filter-btn" onclick="applyFilter('mono')">Mono</button>
+                <button class="filter-btn" onclick="applyFilter('noir')">Noir</button>
+            </div>
 
-  <div class="controls">
-    <button class="snap-btn" onclick="takeSnapshot()"><i class="fa-solid fa-camera"></i></button>
-  </div>
+            <!-- Zoom Control Slider -->
+            <div class="zoom-container">
+                <label for="zoomRange">Zoom: <span id="zoomVal">1.0</span>x</label>
+                <input type="range" id="zoomRange" min="1" max="5" step="0.1" value="1" oninput="updateZoom(this.value)">
+            </div>
 
-  <form id="uploadForm" action="{{ url_for('upload_photo') }}" method="POST" enctype="multipart/form-data" style="display:none;">
-    <input type="file" name="photo" id="photoInput">
-  </form>
+            <!-- Top Toolbar Buttons -->
+            <div class="toolbar">
+                <button id="liveToggleBtn" onclick="toggleLiveMode()">Live: OFF</button>
+                <button id="torchBtn" onclick="toggleFlash()">⚡ Flash</button>
+                <button id="flipBtn" onclick="switchCamera()">🔄 Switch</button>
+            </div>
 
-  <script>
-    let videoTrack = null;
-    let flashOn = false;
+            <!-- Capture Action Button -->
+            <div class="shutter-wrapper">
+                <button class="shutter-btn" onclick="takeSnapshot()"></button>
+            </div>
+        </div>
+    </div>
 
-    async function initCamera() {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-        const video = document.getElementById('video');
-        video.srcObject = stream;
-        videoTrack = stream.getVideoTracks()[0];
-      } catch (err) {
-        alert('Camera access denied or unavailable. Please grant permissions.');
-      }
-    }
-
-    async function toggleFlash() {
-      if (!videoTrack) return;
-      const capabilities = videoTrack.getCapabilities();
-      if (capabilities.torch) {
-        flashOn = !flashOn;
-        await videoTrack.applyConstraints({ advanced: [{ torch: flashOn }] });
-        document.getElementById('flashToggle').classList.toggle('active', flashOn);
-      } else {
-        alert('Flash/Torch is not supported on this browser or hardware.');
-      }
-    }
-
-    function takeSnapshot() {
-      const video = document.getElementById('video');
-      const canvas = document.getElementById('canvas');
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      const ctx = canvas.getContext('2d');
-      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-      canvas.toBlob((blob) => {
-        const file = new File([blob], `snap_${Date.now()}.jpg`, { type: 'image/jpeg' });
-        const container = new DataTransfer();
-        container.items.add(file);
-        const input = document.getElementById('photoInput');
-        input.files = container.files;
-        document.getElementById('uploadForm').submit();
-      }, 'image/jpeg');
-    }
-
-    window.onload = initCamera;
-  </script>
+    <script src="camera.js"></script>
 </body>
 </html>
