@@ -2,420 +2,132 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Focus Photos - Samsung Style Camera</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Camera - Focus Photos</title>
+
+    <!-- iOS & PWA Integration -->
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+    <meta name="theme-color" content="#1a73e8">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Focus Photos">
+
     <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            user-select: none;
-            -webkit-user-select: none;
-        }
-
         body {
-            background-color: #000000;
+            background-color: #121212;
             color: #ffffff;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            height: 100vh;
+            font-family: Arial, sans-serif;
             display: flex;
+            flex-direction: column;
             align-items: center;
-            justify-content: center;
-            overflow: hidden;
+            padding: 20px;
+            margin: 0;
+            min-height: 100vh;
         }
-
         .camera-container {
-            position: relative;
-            width: 100vw;
-            max-width: 500px;
-            height: 100vh;
-            max-height: 920px;
-            background: #000;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            overflow: hidden;
-        }
-
-        /* Screen Flash Overlay */
-        .screen-flash-overlay {
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background-color: #ffffff;
-            z-index: 99;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.05s ease-in-out;
-        }
-
-        /* Top Bar Controls */
-        .camera-top-bar {
-            position: absolute;
-            top: 0; left: 0; right: 0;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 16px;
-            background: linear-gradient(180deg, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 100%);
-            z-index: 30;
-        }
-
-        .icon-btn {
-            background: rgba(255, 255, 255, 0.15);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            color: #fff;
-            padding: 8px 12px;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            font-weight: 500;
-            backdrop-filter: blur(12px);
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 4px;
-        }
-
-        .icon-btn.active {
-            background: #fbbc04;
-            color: #000000;
-            font-weight: 700;
-        }
-
-        /* Viewfinder Area */
-        .viewfinder-wrapper {
-            position: relative;
-            flex: 1;
-            overflow: hidden;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: #000;
-        }
-
-        #camera-video {
             width: 100%;
-            height: 100%;
-            object-fit: cover;
-            transition: transform 0.1s ease;
-        }
-
-        /* Zoom Control Slider */
-        .zoom-container {
-            position: absolute;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 25;
-            background: rgba(0, 0, 0, 0.5);
-            padding: 6px 16px;
-            border-radius: 20px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            backdrop-filter: blur(10px);
-        }
-
-        .zoom-container input[type=range] {
-            width: 140px;
-            accent-color: #1a73e8;
-        }
-
-        /* Grid Overlay */
-        .grid-overlay {
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            pointer-events: none;
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
-            grid-template-rows: 1fr 1fr 1fr;
-            z-index: 15;
-        }
-
-        .grid-overlay div { border: 0.5px solid rgba(255, 255, 255, 0.25); }
-        .grid-overlay.hidden { display: none; }
-
-        /* Bottom Controls */
-        .camera-bottom-bar {
-            background: #000000;
-            padding: 16px 0 28px 0;
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-            z-index: 30;
-        }
-
-        .shutter-row {
-            display: flex;
-            justify-content: space-around;
-            align-items: center;
-            padding: 0 20px;
-        }
-
-        .main-shutter-btn {
-            width: 76px; height: 76px;
-            border-radius: 50%;
-            border: 4px solid #ffffff;
-            background: transparent;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-        }
-
-        .main-shutter-inner {
-            width: 60px; height: 60px;
-            border-radius: 50%;
-            background: #ffffff;
-        }
-
-        /* Save Option Dialog Modal */
-        .save-modal {
-            position: fixed;
-            top: 0; left: 0; width: 100vw; height: 100vh;
-            background: rgba(0,0,0,0.9);
-            z-index: 100;
+            max-width: 480px;
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
-            padding: 20px;
         }
-
-        .save-modal.hidden { display: none; }
-
-        .preview-img {
-            max-width: 90%;
-            max-height: 55vh;
+        video, canvas {
+            width: 100%;
             border-radius: 12px;
-            margin-bottom: 20px;
+            background: #000;
+            border: 2px solid #1a73e8;
         }
-
-        .save-options-box {
-            background: #1e1e1e;
-            padding: 20px;
-            border-radius: 16px;
-            width: 90%;
-            max-width: 380px;
+        .controls {
+            margin-top: 20px;
             display: flex;
-            flex-direction: column;
-            gap: 12px;
+            gap: 15px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        button, .btn {
+            background-color: #1a73e8;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            font-weight: bold;
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 14px;
+        }
+        .btn-secondary {
+            background-color: #3c4043;
+        }
+        #status-msg {
+            margin-top: 15px;
+            font-size: 14px;
+            color: #00f0ff;
             text-align: center;
         }
-
-        .btn-action {
-            padding: 14px;
-            border-radius: 12px;
-            border: none;
-            font-size: 0.95rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: 0.2s;
-        }
-
-        .btn-app-only { background: #1a73e8; color: #fff; }
-        .btn-device { background: #34a853; color: #fff; }
-        .btn-retake { background: #333; color: #bbb; }
     </style>
 </head>
 <body>
 
     <div class="camera-container">
-        <!-- Screen Flash Overlay -->
-        <div id="flash-overlay" class="screen-flash-overlay"></div>
+        <h2 style="margin-bottom: 15px;">Capture Photo</h2>
+        <video id="video" autoplay playsinline></video>
+        <canvas id="canvas" style="display: none;"></canvas>
 
-        <!-- Top Bar -->
-        <div class="camera-top-bar">
-            <button class="icon-btn" onclick="window.location.href='/dashboard'">← Dashboard</button>
-            <button id="btn-flash" class="icon-btn">⚡ Flash: OFF</button>
-            <button id="btn-flip" class="icon-btn">🔄 Flip</button>
+        <div class="controls">
+            <button id="snap-btn" onclick="takePhoto()">📷 Take & Save Photo</button>
+            <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">Back to Gallery</a>
         </div>
 
-        <!-- Viewfinder -->
-        <div class="viewfinder-wrapper" id="viewfinder">
-            <video id="camera-video" autoplay playsinline muted></video>
-
-            <!-- Zoom Controller Slider -->
-            <div class="zoom-container">
-                <span style="font-size:0.75rem;">1x</span>
-                <input type="range" id="zoom-slider" min="1" max="5" step="0.1" value="1">
-                <span id="zoom-value" style="font-size:0.75rem;">1.0x</span>
-            </div>
-
-            <!-- Grid Overlay -->
-            <div id="grid-overlay" class="grid-overlay">
-                <div></div><div></div><div></div>
-                <div></div><div></div><div></div>
-                <div></div><div></div><div></div>
-            </div>
-        </div>
-
-        <!-- Bottom Controls -->
-        <div class="camera-bottom-bar">
-            <div class="shutter-row">
-                <button class="icon-btn" onclick="window.location.href='/dashboard'">🖼️ Gallery</button>
-                <button id="btn-main-shutter" class="main-shutter-btn"><div class="main-shutter-inner"></div></button>
-                <div style="width: 70px;"></div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Save Location Prompt Modal -->
-    <div id="save-modal" class="save-modal hidden">
-        <h3 style="margin-bottom: 15px;">Where would you like to save?</h3>
-        <img id="preview-img" class="preview-img" src="" alt="Captured Photo">
-        
-        <div class="save-options-box">
-            <button id="btn-save-app" class="btn-action btn-app-only">📱 Save to App Photos Only</button>
-            <button id="btn-save-device" class="btn-action btn-device">💾 Save to Device (Downloads)</button>
-            <button id="btn-retake" class="btn-action btn-retake">❌ Discard & Retake</button>
-        </div>
+        <p id="status-msg"></p>
     </div>
 
     <script>
-    document.addEventListener('DOMContentLoaded', () => {
-        const video = document.getElementById('camera-video');
-        const flashOverlay = document.getElementById('flash-overlay');
-        const zoomSlider = document.getElementById('zoom-slider');
-        const zoomValue = document.getElementById('zoom-value');
-        const btnFlash = document.getElementById('btn-flash');
-        const btnFlip = document.getElementById('btn-flip');
-        const btnMainShutter = document.getElementById('btn-main-shutter');
-        const saveModal = document.getElementById('save-modal');
-        const previewImg = document.getElementById('preview-img');
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const statusMsg = document.getElementById('status-msg');
 
-        let currentStream = null;
-        let videoTrack = null;
-        let currentFacingMode = 'environment';
-        let flashMode = false;
-        let currentCapturedBlob = null;
+        // Access camera (rear camera prioritized)
+        navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false })
+            .then(stream => { video.srcObject = stream; })
+            .catch(err => { 
+                statusMsg.style.color = '#ff4d4d';
+                statusMsg.innerText = "Error accessing camera: " + err.message; 
+            });
 
-        // Start Camera Stream
-        async function startCamera() {
-            if (currentStream) {
-                currentStream.getTracks().forEach(track => track.stop());
-            }
+        function takePhoto() {
+            const context = canvas.getContext('2d');
+            canvas.width = video.videoWidth || 640;
+            canvas.height = video.videoHeight || 480;
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-            try {
-                currentStream = await navigator.mediaDevices.getUserMedia({
-                    video: { facingMode: currentFacingMode, width: { ideal: 1920 }, height: { ideal: 1080 } },
-                    audio: false
+            statusMsg.style.color = '#00f0ff';
+            statusMsg.innerText = "Saving photo to cloud...";
+
+            canvas.toBlob(blob => {
+                const formData = new FormData();
+                const filename = `photo_${Date.now()}.png`;
+                formData.append('photo', blob, filename);
+
+                fetch('/upload-photo', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.url) {
+                        statusMsg.style.color = '#00f0ff';
+                        statusMsg.innerText = "Photo saved! View it in your dashboard gallery.";
+                    } else {
+                        statusMsg.style.color = '#ff4d4d';
+                        statusMsg.innerText = "Upload failed: " + (data.error || "Unknown error");
+                    }
+                })
+                .catch(err => {
+                    statusMsg.style.color = '#ff4d4d';
+                    statusMsg.innerText = "Network error saving photo.";
                 });
-                video.srcObject = currentStream;
-                videoTrack = currentStream.getVideoTracks()[0];
-
-                const capabilities = videoTrack.getCapabilities ? videoTrack.getCapabilities() : {};
-                if (capabilities.zoom) {
-                    zoomSlider.min = capabilities.zoom.min;
-                    zoomSlider.max = capabilities.zoom.max;
-                    zoomSlider.step = capabilities.zoom.step;
-                    zoomSlider.value = videoTrack.getSettings().zoom || 1;
-                }
-            } catch (err) {
-                alert("Camera Access Error: " + err.message);
-            }
+            }, 'image/png');
         }
-
-        // Zoom Slider Handler
-        zoomSlider.addEventListener('input', (e) => {
-            const zoomLevel = e.target.value;
-            zoomValue.innerText = `${parseFloat(zoomLevel).toFixed(1)}x`;
-
-            const capabilities = videoTrack ? (videoTrack.getCapabilities ? videoTrack.getCapabilities() : {}) : {};
-            if (capabilities.zoom) {
-                videoTrack.applyConstraints({ advanced: [{ zoom: zoomLevel }] });
-            } else {
-                video.style.transform = `scale(${zoomLevel})`;
-            }
-        });
-
-        // Flash Light Toggle
-        btnFlash.addEventListener('click', () => {
-            flashMode = !flashMode;
-            btnFlash.innerText = flashMode ? '⚡ Flash: ON' : '⚡ Flash: OFF';
-            btnFlash.classList.toggle('active', flashMode);
-
-            const capabilities = videoTrack ? (videoTrack.getCapabilities ? videoTrack.getCapabilities() : {}) : {};
-            if (capabilities.torch) {
-                videoTrack.applyConstraints({ advanced: [{ torch: flashMode }] });
-            }
-        });
-
-        // Flip Camera Toggle
-        btnFlip.addEventListener('click', () => {
-            currentFacingMode = (currentFacingMode === 'user') ? 'environment' : 'user';
-            startCamera();
-        });
-
-        // Capture Shutter Click
-        btnMainShutter.addEventListener('click', () => {
-            if (flashMode) {
-                flashOverlay.style.opacity = '1';
-                setTimeout(() => {
-                    flashOverlay.style.opacity = '0';
-                    processCapture();
-                }, 150);
-            } else {
-                processCapture();
-            }
-        });
-
-        function processCapture() {
-            const canvas = document.createElement('canvas');
-            canvas.width = video.videoWidth || 1280;
-            canvas.height = video.videoHeight || 720;
-            const ctx = canvas.getContext('2d');
-
-            if (currentFacingMode === 'user') {
-                ctx.translate(canvas.width, 0);
-                ctx.scale(-1, 1);
-            }
-
-            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-            canvas.toBlob((blob) => {
-                currentCapturedBlob = blob;
-                const imageUrl = URL.createObjectURL(blob);
-                previewImg.src = imageUrl;
-                saveModal.classList.remove('hidden');
-            }, 'image/jpeg', 0.95);
-        }
-
-        // Option 1: Save to App LocalStorage
-        document.getElementById('btn-save-app').addEventListener('click', () => {
-            const reader = new FileReader();
-            reader.readAsDataURL(currentCapturedBlob);
-            reader.onloadend = () => {
-                const base64data = reader.result;
-                let appPhotos = JSON.parse(localStorage.getItem('app_photos') || '[]');
-                appPhotos.push({
-                    id: Date.now(),
-                    data: base64data,
-                    date: new Date().toLocaleString()
-                });
-                localStorage.setItem('app_photos', JSON.stringify(appPhotos));
-                alert("Photo saved to your App Gallery!");
-                saveModal.classList.add('hidden');
-            };
-        });
-
-        // Option 2: Download directly to user device
-        document.getElementById('btn-save-device').addEventListener('click', () => {
-            const a = document.createElement('a');
-            a.href = previewImg.src;
-            a.download = `photo_${Date.now()}.jpg`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            saveModal.classList.add('hidden');
-        });
-
-        // Discard
-        document.getElementById('btn-retake').addEventListener('click', () => {
-            saveModal.classList.add('hidden');
-        });
-
-        startCamera();
-    });
     </script>
 </body>
 </html>
