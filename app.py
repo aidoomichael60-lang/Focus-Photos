@@ -96,7 +96,6 @@ def dashboard():
     return render_template('dashboard.html', email=session['user_email'])
 
 
-# --- CAMERA ROUTE ---
 @app.route('/camera')
 def camera():
     if 'user_email' not in session:
