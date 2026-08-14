@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Focus Photos</title>
+    
+    <!-- PWA Settings -->
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+    <meta name="theme-color" content="#00f0ff">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Focus Photos">
+
+    <style>
+        body {
+            background-color: #121212;
+            color: #ffffff;
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            text-align: center;
+        }
+        .container {
+            background-color: #1e1e1e;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,240,255,0.2);
+            max-width: 400px;
+            width: 90%;
+        }
+        .logo {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            border: 3px solid #00f0ff;
+            margin-bottom: 20px;
+        }
+        h1 {
+            color: #00f0ff;
+            margin-bottom: 10px;
+        }
+        p {
+            color: #aaa;
+            margin-bottom: 25px;
+        }
+        .btn {
+            display: inline-block;
+            padding: 12px 30px;
+            background-color: #00f0ff;
+            color: #121212;
+            text-decoration: none;
+            font-weight: bold;
+            border-radius: 6px;
+        }
+    </style>
+
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register("{{ url_for('static', filename='sw.js') }}");
+        });
+      }
+    </script>
+</head>
+<body>
+    <div class="container">
+        <img src="{{ url_for('static', filename='logo.png') }}" onerror="this.onerror=null; this.src='https://cdn-icons-png.flaticon.com/512/1042/1042339.png';" alt="Focus Photos Logo" class="logo">
+        <h1>Focus Photos</h1>
+        <p>Capture and manage your photos securely.</p>
+        <a href="{{ url_for('login') }}" class="btn">Get Started</a>
+    </div>
+</body>
+</html>
