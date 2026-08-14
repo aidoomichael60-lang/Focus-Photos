@@ -1,75 +1,37 @@
 import os
 import random
-import requests
-from flask import Flask, render_template, request, redirect, url_for, session, flash
+from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify, send_from_directory
+from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
-app.secret_key = os.environ.get("SECRET_KEY", "super_secret_dev_key")
+app.secret_key = "focus_photos_secret_key"  # Replace with a strong random key
 
-# Retrieve Resend API key from environment variable or fallback for local testing
-RESEND_API_KEY = os.environ.get("RESEND_API_KEY", "")
+# Folder where uploaded photos are saved
+UPLOAD_FOLDER = os.path.join(app.root_path, 'uploads')
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
 
-def send_and_redirect_otp(email):
-    # Generate a random 6-digit OTP
-    otp = random.randint(100000, 999999)
-    session['otp'] = otp
-    session['pending_email'] = email
-
-    print(f"\n==========================================")
-    print(f"🔑 VERIFICATION CODE FOR {email}: {otp}")
-    print(f"==========================================\n")
-
-    url = "https://api.resend.com/emails"
-    headers = {
-        "Authorization": f"Bearer {RESEND_API_KEY}",
-        "Content-Type": "application/json"
-    }
-    
-    # Always route the email to your primary inbox to bypass Resend sandbox restrictions
-    payload = {
-        "from": "Focus Photos <onboarding@resend.dev>",
-        "to": ["aidoomichael60@gmail.com"],
-        "subject": f"Verification Code for {email} 🔑",
-        "html": f"""
-        <div style="font-family: Arial, sans-serif; padding: 20px; color: #333; max-width: 500px; margin: auto; border: 1px solid #eee; border-radius: 10px;">
-            <h2 style="color: #111;">Focus Photos Verification</h2>
-            <p>A user is trying to log in/register with the email: <strong>{email}</strong></p>
-            <p>The verification code is:</p>
-            <div style="background-color: #f4f4f5; padding: 15px; text-align: center; border-radius: 8px;">
-                <h1 style="color: #00f0ff; letter-spacing: 6px; margin: 0;">{otp}</h1>
-            </div>
-            <p style="margin-top: 15px; color: #666; font-size: 14px;">Enter or share this code to complete the verification step.</p>
-        </div>
-        """
-    }
-
-    try:
-        response = requests.post(url, json=payload, headers=headers, timeout=8)
-        if response.status_code in [200, 201]:
-            print(f"[SUCCESS] OTP email routed to aidoomichael60@gmail.com")
-        else:
-            print(f"[RESEND NOTICE] {response.status_code} Response: {response.text}")
-    except Exception as e:
-        print(f"[ERROR] Could not reach Resend API: {e}")
-
-    return redirect(url_for('verify_otp'))
-
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 @app.route('/')
-def home():
+def index():
     return render_template('index.html')
-
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
         email = request.form.get('email', '').strip()
-        if not email:
-            flash("Please enter a valid email address.", "danger")
-            return render_template('login.html')
-        return send_and_redirect_otp(email)
+        if email:
+            session['pending_email'] = email
+            # Generate temporary 6-digit OTP code
+            session['otp'] = str(random.randint(100000, 999999))
+            flash(f"Your verification code is: {session['otp']}", "info")
+            return redirect(url_for('verify_otp'))
+        else:
+            flash("Please enter a valid email.", "danger")
     return render_template('login.html')
-
 
 @app.route('/verify-otp', methods=['GET', 'POST'])
 def verify_otp():
@@ -83,33 +45,95 @@ def verify_otp():
             flash("Successfully logged in!", "success")
             return redirect(url_for('dashboard'))
         else:
-            flash("Invalid or expired verification code. Please try again.", "danger")
+            flash("Invalid code. Please try again.", "danger")
 
     return render_template('verify_otp.html')
-
 
 @app.route('/dashboard')
 def dashboard():
     if 'user_email' not in session:
-        flash("Please log in to access the dashboard.", "warning")
         return redirect(url_for('login'))
     return render_template('dashboard.html', email=session['user_email'])
-
 
 @app.route('/camera')
 def camera():
     if 'user_email' not in session:
-        flash("Please log in to access the camera.", "warning")
         return redirect(url_for('login'))
     return render_template('camera.html')
 
+@app.route('/upload-photo', methods=['POST'])
+def upload_photo():
+    if 'user_email' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+
+    if 'photo' not in request.files:
+        return jsonify({'error': 'No photo provided'}), 400
+
+    file = request.files['photo']
+    if file.filename == '' or not allowed_file(file.filename):
+        return jsonify({'error': 'Invalid file format'}), 400
+
+    filename = secure_filename(file.filename)
+    user_prefix = secure_filename(session['user_email'])
+    saved_filename = f"{user_prefix}_{filename}"
+    filepath = os.path.join(app.config['UPLOAD_FOLDER'], saved_filename)
+    file.save(filepath)
+
+    file_size = os.path.getsize(filepath)
+
+    return jsonify({
+        'message': 'Photo uploaded successfully!',
+        'filename': saved_filename,
+        'url': url_for('get_uploaded_file', filename=saved_filename),
+        'size': file_size
+    })
+
+@app.route('/uploads/<filename>')
+def get_uploaded_file(filename):
+    return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
+
+@app.route('/get-user-photos', methods=['GET'])
+def get_user_photos():
+    if 'user_email' not in session:
+        return jsonify({'photos': []}), 401
+
+    user_prefix = secure_filename(session['user_email'])
+    photos = []
+
+    if os.path.exists(app.config['UPLOAD_FOLDER']):
+        for fname in os.listdir(app.config['UPLOAD_FOLDER']):
+            if fname.startswith(user_prefix):
+                filepath = os.path.join(app.config['UPLOAD_FOLDER'], fname)
+                photos.append({
+                    'filename': fname,
+                    'url': url_for('get_uploaded_file', filename=fname),
+                    'size': os.path.getsize(filepath)
+                })
+
+    return jsonify({'photos': photos})
+
+@app.route('/delete-photo', methods=['POST'])
+def delete_photo():
+    if 'user_email' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+
+    data = request.get_json()
+    filename = data.get('filename', '')
+    user_prefix = secure_filename(session['user_email'])
+
+    # Ensure security so users can only delete their own photos
+    if filename and filename.startswith(user_prefix):
+        filepath = os.path.join(app.config['UPLOAD_FOLDER'], secure_filename(filename))
+        if os.path.exists(filepath):
+            os.remove(filepath)
+            return jsonify({'message': 'Photo deleted successfully!'})
+
+    return jsonify({'error': 'File not found or permission denied'}), 400
 
 @app.route('/logout')
 def logout():
     session.clear()
-    flash("You have been logged out.", "info")
-    return redirect(url_for('home'))
-
+    return redirect(url_for('login'))
 
 if __name__ == '__main__':
     app.run(debug=True)
