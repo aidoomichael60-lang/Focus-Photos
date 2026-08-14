@@ -1,12 +1,14 @@
-self.addEventListener('install', (e) => {
-  console.log('[Service Worker] Installed');
-  self.skipWaiting();
+const CACHE_NAME = 'focus-photos-v1';
+const urlsToCache = ['/', '/dashboard', '/camera'];
+
+self.addEventListener('install', event => {
+  event.waitUntil(
+    caches.open(CACHE_NAME).then(cache => cache.addAll(urlsToCache))
+  );
 });
 
-self.addEventListener('activate', (e) => {
-  console.log('[Service Worker] Activated');
-});
-
-self.addEventListener('fetch', (e) => {
-  e.respondWith(fetch(e.request));
+self.addEventListener('fetch', event => {
+  event.respondWith(
+    fetch(event.request).catch(() => caches.match(event.request))
+  );
 });
