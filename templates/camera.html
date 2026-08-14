@@ -4,48 +4,348 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Focus Photos - Pro Camera</title>
-    <link rel="stylesheet" href="camera.css">
+
+    <!-- INLINE CSS STYLES -->
+    <style>
+        body {
+            background-color: #000;
+            color: #fff;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+        }
+
+        .camera-container {
+            width: 100%;
+            max-width: 480px;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .viewfinder-wrapper {
+            position: relative;
+            width: 100%;
+            height: 60vh;
+            overflow: hidden;
+            background: #111;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #cameraFeed {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.1s ease-out, filter 0.2s ease;
+        }
+
+        /* iPhone Vivid & B&W Color Profiles */
+        .filter-none { filter: none; }
+        .filter-vivid { filter: contrast(125%) saturate(140%) brightness(105%); }
+        .filter-vivid-warm { filter: contrast(120%) saturate(135%) sepia(20%) hue-rotate(-10deg); }
+        .filter-vivid-cool { filter: contrast(120%) saturate(135%) hue-rotate(15deg); }
+        .filter-mono { filter: grayscale(100%) contrast(120%); }
+        .filter-noir { filter: grayscale(100%) contrast(180%) brightness(85%); }
+
+        .live-badge {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            background: #ffcc00;
+            color: #000;
+            font-weight: bold;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+        .hidden { display: none; }
+
+        .controls-panel {
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            background: #000;
+        }
+
+        .filter-bar {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            padding-bottom: 5px;
+        }
+
+        .filter-btn {
+            background: #222;
+            color: #fff;
+            border: 1px solid #444;
+            padding: 6px 12px;
+            border-radius: 15px;
+            white-space: nowrap;
+            cursor: pointer;
+        }
+
+        .filter-btn.active {
+            border-color: #ffcc00;
+            color: #ffcc00;
+        }
+
+        .zoom-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 14px;
+        }
+
+        .toolbar {
+            display: flex;
+            justify-content: space-around;
+        }
+
+        .toolbar button {
+            background: #1c1c1e;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        .shutter-wrapper {
+            display: flex;
+            justify-content: center;
+            margin-top: 5px;
+        }
+
+        .shutter-btn {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            background-color: #fff;
+            border: 4px solid #000;
+            outline: 3px solid #fff;
+            cursor: pointer;
+        }
+    </style>
 </head>
 <body>
+
     <div class="camera-container">
-        <!-- Live Video Viewfinder -->
+        <!-- Live Viewfinder -->
         <div class="viewfinder-wrapper">
             <video id="cameraFeed" autoplay playsinline muted></video>
             <div id="liveBadge" class="live-badge hidden">LIVE</div>
         </div>
 
-        <!-- Controls Bar -->
+        <!-- Camera Controls -->
         <div class="controls-panel">
-            <!-- Filter Selection Bar -->
+            <!-- Filters -->
             <div class="filter-bar">
-                <button class="filter-btn active" onclick="applyFilter('none')">Original</button>
-                <button class="filter-btn" onclick="applyFilter('vivid')">Vivid</button>
-                <button class="filter-btn" onclick="applyFilter('vivid-warm')">Vivid Warm</button>
-                <button class="filter-btn" onclick="applyFilter('vivid-cool')">Vivid Cool</button>
-                <button class="filter-btn" onclick="applyFilter('mono')">Mono</button>
-                <button class="filter-btn" onclick="applyFilter('noir')">Noir</button>
+                <button class="filter-btn active" onclick="applyFilter(event, 'none')">Original</button>
+                <button class="filter-btn" onclick="applyFilter(event, 'vivid')">Vivid</button>
+                <button class="filter-btn" onclick="applyFilter(event, 'vivid-warm')">Vivid Warm</button>
+                <button class="filter-btn" onclick="applyFilter(event, 'vivid-cool')">Vivid Cool</button>
+                <button class="filter-btn" onclick="applyFilter(event, 'mono')">Mono</button>
+                <button class="filter-btn" onclick="applyFilter(event, 'noir')">Noir</button>
             </div>
 
-            <!-- Zoom Control Slider -->
+            <!-- Zoom -->
             <div class="zoom-container">
                 <label for="zoomRange">Zoom: <span id="zoomVal">1.0</span>x</label>
                 <input type="range" id="zoomRange" min="1" max="5" step="0.1" value="1" oninput="updateZoom(this.value)">
             </div>
 
-            <!-- Top Toolbar Buttons -->
+            <!-- Toolbar Options -->
             <div class="toolbar">
                 <button id="liveToggleBtn" onclick="toggleLiveMode()">Live: OFF</button>
                 <button id="torchBtn" onclick="toggleFlash()">⚡ Flash</button>
                 <button id="flipBtn" onclick="switchCamera()">🔄 Switch</button>
             </div>
 
-            <!-- Capture Action Button -->
+            <!-- Capture Shutter Button -->
             <div class="shutter-wrapper">
                 <button class="shutter-btn" onclick="takeSnapshot()"></button>
             </div>
         </div>
     </div>
 
-    <script src="camera.js"></script>
+    <!-- INLINE JAVASCRIPT LOGIC -->
+    <script>
+        let currentStream = null;
+        let currentTrack = null;
+        let facingMode = 'environment';
+        let selectedFilter = 'none';
+        let isLiveMode = false;
+        let currentZoom = 1.0;
+
+        // Start Camera
+        async function initCamera() {
+            if (currentStream) {
+                currentStream.getTracks().forEach(track => track.stop());
+            }
+
+            try {
+                currentStream = await navigator.mediaDevices.getUserMedia({
+                    video: {
+                        facingMode: facingMode,
+                        width: { ideal: 1920 },
+                        height: { ideal: 1080 }
+                    }
+                });
+
+                const video = document.getElementById('cameraFeed');
+                video.srcObject = currentStream;
+                currentTrack = currentStream.getVideoTracks()[0];
+
+                const capabilities = currentTrack.getCapabilities ? currentTrack.getCapabilities() : {};
+                if (capabilities.zoom) {
+                    const zoomInput = document.getElementById('zoomRange');
+                    zoomInput.min = capabilities.zoom.min;
+                    zoomInput.max = capabilities.zoom.max;
+                    zoomInput.step = capabilities.zoom.step;
+                }
+            } catch (err) {
+                console.error("Camera access failed: ", err);
+                alert("Camera permission required or not supported on this browser.");
+            }
+        }
+
+        // 1. Zoom Control
+        async function updateZoom(val) {
+            currentZoom = val;
+            document.getElementById('zoomVal').innerText = val;
+            
+            if (currentTrack && currentTrack.getCapabilities) {
+                const capabilities = currentTrack.getCapabilities();
+                if (capabilities.zoom) {
+                    await currentTrack.applyConstraints({ advanced: [{ zoom: parseFloat(val) }] });
+                    return;
+                }
+            }
+            // CSS Fallback Zoom
+            const video = document.getElementById('cameraFeed');
+            video.style.transform = `scale(${val})`;
+        }
+
+        // 2. iPhone Filters
+        function applyFilter(event, filterName) {
+            selectedFilter = filterName;
+            const video = document.getElementById('cameraFeed');
+            video.className = `filter-${filterName}`;
+
+            document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+        }
+
+        // 3. Live Photo Toggle
+        function toggleLiveMode() {
+            isLiveMode = !isLiveMode;
+            const btn = document.getElementById('liveToggleBtn');
+            const badge = document.getElementById('liveBadge');
+            
+            if (isLiveMode) {
+                btn.innerText = "Live: ON";
+                btn.style.color = "#ffcc00";
+                badge.classList.remove('hidden');
+            } else {
+                btn.innerText = "Live: OFF";
+                btn.style.color = "#fff";
+                badge.classList.add('hidden');
+            }
+        }
+
+        // 4. Flash / Torch
+        async function toggleFlash() {
+            if (!currentTrack) return;
+            const capabilities = currentTrack.getCapabilities ? currentTrack.getCapabilities() : {};
+            
+            if (capabilities.torch) {
+                const settings = currentTrack.getSettings();
+                await currentTrack.applyConstraints({
+                    advanced: [{ torch: !settings.torch }]
+                });
+            } else {
+                alert("Torch/Flash hardware is not available on this camera.");
+            }
+        }
+
+        // 5. Flip Camera
+        function switchCamera() {
+            facingMode = (facingMode === 'environment') ? 'user' : 'environment';
+            initCamera();
+        }
+
+        // 6. Capture Photo / Live Photo
+        async function takeSnapshot() {
+            const video = document.getElementById('cameraFeed');
+            const canvas = document.createElement('canvas');
+            
+            canvas.width = video.videoWidth || 1280;
+            canvas.height = video.videoHeight || 720;
+            const ctx = canvas.getContext('2d');
+
+            // Apply active CSS filter to saved output
+            ctx.filter = getComputedStyle(video).filter;
+
+            // Burn zoom into captured frame if fallback was used
+            if (currentZoom > 1.0) {
+                ctx.translate(canvas.width / 2, canvas.height / 2);
+                ctx.scale(currentZoom, currentZoom);
+                ctx.translate(-canvas.width / 2, -canvas.height / 2);
+            }
+
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            canvas.toBlob(async (imageBlob) => {
+                if (isLiveMode) {
+                    const videoBlob = await recordLiveClip();
+                    await uploadLivePhoto(imageBlob, videoBlob);
+                } else {
+                    await uploadPhoto(imageBlob);
+                }
+            }, 'image/jpeg', 0.95);
+        }
+
+        // 2-Second Video Recording for Live Photo
+        function recordLiveClip() {
+            return new Promise((resolve) => {
+                const recorder = new MediaRecorder(currentStream, { mimeType: 'video/webm' });
+                let chunks = [];
+
+                recorder.ondataavailable = (e) => chunks.push(e.data);
+                recorder.onstop = () => {
+                    const videoBlob = new Blob(chunks, { type: 'video/webm' });
+                    resolve(videoBlob);
+                };
+
+                recorder.start();
+                setTimeout(() => recorder.stop(), 2000);
+            });
+        }
+
+        // Upload Handlers
+        async function uploadPhoto(blob) {
+            const formData = new FormData();
+            formData.append('photo', blob, `photo_${Date.now()}.jpg`);
+
+            const res = await fetch('/upload-photo', { method: 'POST', body: formData });
+            if (res.ok) alert("Photo captured & uploaded successfully!");
+        }
+
+        async function uploadLivePhoto(imageBlob, videoBlob) {
+            const formData = new FormData();
+            formData.append('photo', imageBlob, `live_${Date.now()}.jpg`);
+            formData.append('live_video', videoBlob, `live_${Date.now()}.webm`);
+
+            const res = await fetch('/upload-live-photo', { method: 'POST', body: formData });
+            if (res.ok) alert("Live Photo captured & uploaded successfully!");
+        }
+
+        window.onload = initCamera;
+    </script>
 </body>
 </html>
